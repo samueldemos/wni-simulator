@@ -26,15 +26,21 @@ import {
 } from './engine.js';
 
 const PORT = Number(process.env.PORT ?? 3001);
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? '*';
+// CLIENT_ORIGIN boleh berisi beberapa URL dipisah koma, atau "*" untuk semua.
+const RAW_ORIGIN = process.env.CLIENT_ORIGIN ?? '*';
+const CORS_ORIGIN: string | string[] =
+  RAW_ORIGIN === '*'
+    ? '*'
+    : RAW_ORIGIN.split(',').map((s) => s.trim()).filter(Boolean);
 
 const app = express();
-app.use(cors({ origin: CLIENT_ORIGIN }));
+app.use(cors({ origin: CORS_ORIGIN }));
+app.get('/', (_req, res) => res.send('WNI Simulator server is running.'));
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
 const httpServer = createServer(app);
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
-  cors: { origin: CLIENT_ORIGIN },
+  cors: { origin: CORS_ORIGIN },
 });
 
 // roomCode -> state

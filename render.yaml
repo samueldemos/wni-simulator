@@ -1,0 +1,18 @@
+# Render blueprint untuk SERVER WNI Simulator.
+# Render akan membaca file ini saat kamu "New +" -> "Blueprint" dari repo.
+services:
+  - type: web
+    name: wni-simulator-server
+    runtime: node
+    plan: free
+    # Build dari root monorepo: install semua, build shared lalu server.
+    buildCommand: npm install && npm run build:shared && npm run build --workspace server
+    startCommand: node server/dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # Isi dengan URL frontend Vercel kamu nanti (untuk CORS).
+      # Boleh beberapa URL dipisah koma. Sementara "*" agar mudah saat setup.
+      - key: CLIENT_ORIGIN
+        value: "*"

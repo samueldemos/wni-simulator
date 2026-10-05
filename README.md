@@ -63,19 +63,41 @@ npm run test -w server
 
 ## Deploy agar bisa diakses teman lewat internet
 
-Game ini perlu **2 bagian** yang di-deploy:
+Game ini perlu **2 bagian** yang di-deploy: **Server** ke Render, **Client** ke
+Vercel. Repo sudah menyertakan `render.yaml` dan `vercel.json` sebagai konfigurasi.
 
-1. **Server** (Node) ke platform seperti **Railway / Render / Fly.io**.
-   - Build: `npm install && npm run build`
-   - Start: `node server/dist/index.js`
-   - Set env `CLIENT_ORIGIN` ke URL frontend-mu (untuk CORS), dan `PORT` kalau
-     diperlukan platform.
-2. **Client** (static) ke **Vercel / Netlify / Cloudflare Pages**.
-   - Build: `npm install && npm run build -w client`
-   - Output: `client/dist`
-   - Set env `VITE_SERVER_URL` ke URL public server (langkah 1).
+### Langkah 1 — Deploy Server ke Render
 
-Setelah keduanya online, cukup bagikan URL frontend + kode room ke temanmu. 🎉
+1. Buka https://render.com, **Sign in with GitHub**.
+2. **New +** -> **Blueprint** -> pilih repo `wni-simulator`. Render membaca
+   `render.yaml` dan menyiapkan service `wni-simulator-server` otomatis.
+   (Alternatif tanpa blueprint: **New +** -> **Web Service** ->
+   Build Command: `npm install && npm run build:shared && npm run build --workspace server`,
+   Start Command: `node server/dist/index.js`, Health Check Path: `/health`.)
+3. Klik **Apply / Create**. Tunggu build selesai (beberapa menit).
+4. Setelah hidup, salin URL-nya, mis. `https://wni-simulator-server.onrender.com`.
+   Buka `URL/health` di browser, harus muncul `{"ok":true}`.
+
+### Langkah 2 — Deploy Client ke Vercel
+
+1. Buka https://vercel.com, **Sign in with GitHub**.
+2. **Add New...** -> **Project** -> import repo `wni-simulator`.
+3. Vercel membaca `vercel.json` (build & output sudah diatur). Sebelum deploy,
+   buka **Environment Variables**, tambah:
+   - `VITE_SERVER_URL` = URL server Render dari Langkah 1 (tanpa garis miring
+     di akhir), mis. `https://wni-simulator-server.onrender.com`
+4. Klik **Deploy**. Setelah selesai, kamu dapat URL frontend, mis.
+   `https://wni-simulator.vercel.app`.
+
+### Langkah 3 — Hubungkan keduanya (CORS)
+
+1. Kembali ke Render -> service server -> **Environment** -> set
+   `CLIENT_ORIGIN` = URL Vercel dari Langkah 2 (mis.
+   `https://wni-simulator.vercel.app`). Simpan (server akan re-deploy).
+2. Selesai! Buka URL Vercel, buat room, bagikan kode + link ke temanmu. 🎉
+
+> Catatan: Render free tier "tidur" setelah idle; koneksi pertama bisa lambat
+> ~30 detik saat server bangun. Wajar untuk tier gratis.
 
 ## Catatan aturan
 
