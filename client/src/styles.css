@@ -656,8 +656,8 @@ input:focus {
    ============================================================ */
 .board {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
+  grid-template-columns: repeat(11, 1fr);
+  grid-template-rows: repeat(11, 1fr);
   gap: var(--s-1);
   width: min(82vh, 100%);
   aspect-ratio: 1;
@@ -824,8 +824,8 @@ input:focus {
 
 /* ---------- Board center ---------- */
 .board-center {
-  grid-row: 2 / 8;
-  grid-column: 2 / 8;
+  grid-row: 2 / 11;
+  grid-column: 2 / 11;
   display: flex;
   flex-direction: column;
   align-items: center;
