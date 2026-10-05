@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   BOARD,
+  ISLAND_COLOR,
+  ISLAND_LABEL,
+  ISLAND_ORDER,
   LEVEL_ICON,
   LEVEL_LABEL,
   TOL_INDICES,
@@ -100,6 +103,19 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
 
   const needUpgrade = state.pendingUpgradeFor === playerId;
   const needTol = state.pendingTolFor === playerId;
+
+  // Properti milikku, dikelompokkan per pulau (untuk panel "Propertiku").
+  const myProps = state.properties
+    .filter((p) => p.ownerId === playerId)
+    .map((p) => ({ state: p, tile: BOARD[p.tileIndex] as PropertyTile }));
+
+  const myPropsByIsland = ISLAND_ORDER.map((island) => {
+    const all = BOARD.filter(
+      (t): t is PropertyTile => t.type === 'property' && t.island === island,
+    );
+    const owned = myProps.filter((m) => m.tile.island === island);
+    return { island, owned, total: all.length };
+  }).filter((g) => g.owned.length > 0);
 
   return (
     <div className="game">
@@ -229,6 +245,48 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
 
           {state.phase === 'playing' && !myTurn && (
             <div className="hint">Menunggu giliran {current?.name}...</div>
+          )}
+        </section>
+
+        {/* Propertiku */}
+        <section className="panel">
+          <h3>Propertiku ({myProps.length})</h3>
+          {myProps.length === 0 ? (
+            <div className="hint">
+              Belum punya properti. Caplok kota saat berhenti di petaknya!
+            </div>
+          ) : (
+            <div className="myprops">
+              {myPropsByIsland.map((g) => (
+                <div key={g.island} className="myprops-group">
+                  <div
+                    className="myprops-island"
+                    style={{ color: ISLAND_COLOR[g.island] }}
+                  >
+                    <span
+                      className="myprops-dot"
+                      style={{ background: ISLAND_COLOR[g.island] }}
+                    />
+                    {ISLAND_LABEL[g.island]}
+                    <span className="myprops-count">
+                      {g.owned.length}/{g.total}
+                      {g.owned.length === g.total && ' 👑'}
+                    </span>
+                  </div>
+                  {g.owned.map(({ state: ps, tile }) => (
+                    <div key={ps.tileIndex} className="myprops-item">
+                      <span className="myprops-level" title={LEVEL_LABEL[ps.level]}>
+                        {LEVEL_ICON[ps.level]}
+                      </span>
+                      <span className="myprops-name">{tile.name}</span>
+                      <span className="myprops-rent">
+                        sewa {rupiah(tile.rent[ps.level])}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           )}
         </section>
 
