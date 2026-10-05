@@ -665,8 +665,10 @@ input:focus {
    ============================================================ */
 .board {
   display: grid;
-  grid-template-columns: repeat(11, 1fr);
-  grid-template-rows: repeat(11, 1fr);
+  /* minmax(0,1fr) WAJIB: tanpa ini kolom tak mau menyusut (min-width:auto),
+     sehingga isi petak memaksa papan meluber keluar lebarnya. */
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+  grid-template-rows: repeat(11, minmax(0, 1fr));
   gap: var(--s-1);
   /* papan selalu kotak & muat: sisi = terkecil dari lebar induk & tinggi layar */
   width: min(100%, 82vh);
@@ -683,7 +685,9 @@ input:focus {
   position: relative;
   display: flex;
   flex-direction: column;
+  min-width: 0; /* biar petak boleh menyusut, tak memaksa papan melebar */
   min-height: 0;
+  overflow: hidden;
   padding: var(--s-1);
   font-size: 10px;
   color: var(--ink);
