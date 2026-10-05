@@ -5,6 +5,7 @@ import type { ChatMessage } from '../App';
 import { Board } from './Board';
 import { Dice } from './Dice';
 import { AnimatedMoney } from './AnimatedMoney';
+import { Avatar } from './Avatar';
 import { sfx } from '../sound';
 
 interface Props {
@@ -103,9 +104,7 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
                   (p.bankrupt ? 'bankrupt' : '')
                 }
               >
-                <span className="avatar" style={{ borderColor: p.color }}>
-                  {p.avatar}
-                </span>
+                <Avatar avatar={p.avatar} color={p.color} title={p.name} />
                 <span className="pname">
                   {p.name}
                   {p.id === playerId && ' (kamu)'}

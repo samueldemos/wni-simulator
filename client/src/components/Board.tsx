@@ -157,7 +157,11 @@ export function Board({ state }: Props) {
           >
             {/* key berubah tiap langkah -> animasi hop re-trigger */}
             <span key={pos} className="pawn-emoji">
-              {p.avatar}
+              {p.avatar.startsWith('data:') ? (
+                <img className="pawn-img" src={p.avatar} alt={p.name} />
+              ) : (
+                p.avatar
+              )}
             </span>
           </div>
         );

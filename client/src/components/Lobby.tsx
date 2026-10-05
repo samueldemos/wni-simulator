@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AVATAR_OPTIONS, type GameState } from '@wni/shared';
 import type { GameSocket } from '../socket';
+import { Avatar } from './Avatar';
+import { fileToAvatarDataUrl } from '../imageUtil';
 
 interface Props {
   socket: GameSocket;
@@ -10,17 +12,34 @@ interface Props {
 }
 
 export function Lobby({ socket, state, playerId, onError }: Props) {
+  const [screen, setScreen] = useState<'landing' | 'form'>('landing');
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState(AVATAR_OPTIONS[0].emoji);
+  const [photo, setPhoto] = useState<string | null>(null);
   const [joinCode, setJoinCode] = useState('');
   const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
   const inRoom = !!state;
+  const chosenAvatar = photo ?? avatar;
+
+  const onPickFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await fileToAvatarDataUrl(file, 96);
+      setPhoto(dataUrl);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Gagal memuat foto.');
+    } finally {
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
 
   const create = () => {
     if (!name.trim()) return onError('Isi nama dulu.');
     setBusy(true);
-    socket.emit('room:create', { name, avatar }, (res) => {
+    socket.emit('room:create', { name, avatar: chosenAvatar }, (res) => {
       setBusy(false);
       if (!res.ok) onError(res.error ?? 'Gagal membuat room.');
     });
@@ -30,10 +49,14 @@ export function Lobby({ socket, state, playerId, onError }: Props) {
     if (!name.trim()) return onError('Isi nama dulu.');
     if (!joinCode.trim()) return onError('Isi kode room.');
     setBusy(true);
-    socket.emit('room:join', { roomCode: joinCode, name, avatar }, (res) => {
-      setBusy(false);
-      if (!res.ok) onError(res.error ?? 'Gagal bergabung.');
-    });
+    socket.emit(
+      'room:join',
+      { roomCode: joinCode, name, avatar: chosenAvatar },
+      (res) => {
+        setBusy(false);
+        if (!res.ok) onError(res.error ?? 'Gagal bergabung.');
+      },
+    );
   };
 
   const start = () => {
@@ -42,6 +65,7 @@ export function Lobby({ socket, state, playerId, onError }: Props) {
     });
   };
 
+  // ---------- Ruang tunggu (sudah di room) ----------
   if (inRoom && state) {
     const me = state.players.find((p) => p.id === playerId);
     const isHost = me?.isHost;
@@ -58,9 +82,7 @@ export function Lobby({ socket, state, playerId, onError }: Props) {
           <ul className="playerlist">
             {state.players.map((p) => (
               <li key={p.id}>
-                <span className="avatar" style={{ borderColor: p.color }}>
-                  {p.avatar}
-                </span>
+                <Avatar avatar={p.avatar} color={p.color} title={p.name} />
                 {p.name}
                 {p.isHost && <span className="badge">Host</span>}
                 {p.id === playerId && <span className="badge you">Kamu</span>}
@@ -85,33 +107,119 @@ export function Lobby({ socket, state, playerId, onError }: Props) {
     );
   }
 
+  // ---------- Landing page ----------
+  if (screen === 'landing') {
+    return (
+      <div className="landing">
+        <div className="landing-hero">
+          <div className="landing-badge">🇮🇩 Monopoli Nusantara</div>
+          <h1 className="landing-title">
+            WNI <span className="accent">Simulator</span>
+          </h1>
+          <p className="landing-tagline">
+            Caplok tanah dari Papua sampai Jawa, tarik kartu <b>Musibah</b> &{' '}
+            <b>Takdir</b> yang bikin ngakak, dan hati-hati{' '}
+            <b>ketahuan korupsi</b> — kena OTT KPK, harta disita negara! 😏
+          </p>
+
+          <div className="landing-features">
+            <div className="feat">
+              <div className="feat-icon">🎲</div>
+              <div className="feat-title">Main Real-time</div>
+              <div className="feat-desc">
+                Buat room, bagikan kode, main bareng teman.
+              </div>
+            </div>
+            <div className="feat">
+              <div className="feat-icon">🃏</div>
+              <div className="feat-title">Kartu Satir</div>
+              <div className="feat-desc">
+                Pungli, THR, crypto bodong, jalur orang dalam.
+              </div>
+            </div>
+            <div className="feat">
+              <div className="feat-icon">🔒</div>
+              <div className="feat-title">Aturan Korupsi</div>
+              <div className="feat-desc">
+                Dipenjara? 50% harta disita, sewa masuk negara.
+              </div>
+            </div>
+          </div>
+
+          <button className="btn primary landing-cta" onClick={() => setScreen('form')}>
+            🎮 Main Sekarang
+          </button>
+          <p className="landing-foot">
+            Tanpa install. Cukup browser & kode room.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- Form buat / gabung ----------
   return (
     <div className="lobby">
       <div className="lobby-card">
-        <h2>Selamat datang, calon WNI tersukses!</h2>
-        <p className="hint">
-          Monopoli bertema Indonesia. Beli kota, bangun properti, hindari
-          korupsi (atau tidak 😏). Pemain terakhir yang bertahan menang.
-        </p>
+        <button className="link-back" onClick={() => setScreen('landing')}>
+          ← kembali
+        </button>
+        <h2>Siapkan karaktermu</h2>
 
-        <label>
-          Pilih karakter —{' '}
-          <span className="avatar-name">
-            {AVATAR_OPTIONS.find((o) => o.emoji === avatar)?.label}
-          </span>
-        </label>
+        {/* Preview avatar terpilih */}
+        <div className="avatar-preview">
+          <Avatar avatar={chosenAvatar} color="#ffce54" size={72} />
+          <div className="avatar-preview-label">
+            {photo
+              ? 'Foto kamu'
+              : AVATAR_OPTIONS.find((o) => o.emoji === avatar)?.label}
+          </div>
+        </div>
+
+        <label>Pilih karakter</label>
         <div className="avatar-picker">
           {AVATAR_OPTIONS.map((o) => (
             <button
               key={o.emoji}
               type="button"
               title={o.label}
-              className={`avatar-choice ${avatar === o.emoji ? 'selected' : ''}`}
-              onClick={() => setAvatar(o.emoji)}
+              className={`avatar-choice ${
+                !photo && avatar === o.emoji ? 'selected' : ''
+              }`}
+              onClick={() => {
+                setAvatar(o.emoji);
+                setPhoto(null);
+              }}
             >
               {o.emoji}
             </button>
           ))}
+        </div>
+
+        <div className="photo-row">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={onPickFile}
+          />
+          <button
+            type="button"
+            className="btn small"
+            onClick={() => fileRef.current?.click()}
+          >
+            📷 Upload Foto
+          </button>
+          {photo && (
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => setPhoto(null)}
+            >
+              ✕ Hapus Foto
+            </button>
+          )}
         </div>
 
         <label>

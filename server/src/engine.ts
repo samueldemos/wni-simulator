@@ -29,6 +29,20 @@ const PLAYER_COLORS = [
   '#fb8c00',
 ];
 
+// Batas aman ukuran foto avatar (data URL) ~ 60 KB.
+const MAX_AVATAR_LEN = 60_000;
+
+/** Terima emoji dari daftar, atau foto (data URL) yang ukurannya wajar. */
+function pickAvatar(avatar: string | undefined, slot: number): string {
+  if (avatar) {
+    if (AVATARS.includes(avatar)) return avatar;
+    if (avatar.startsWith('data:image/') && avatar.length <= MAX_AVATAR_LEN) {
+      return avatar;
+    }
+  }
+  return AVATARS[slot % AVATARS.length];
+}
+
 let logSeq = 0;
 
 function makeLog(text: string): LogEntry {
@@ -93,7 +107,7 @@ export function addPlayer(
     id,
     name,
     color: PLAYER_COLORS[state.players.length % PLAYER_COLORS.length],
-    avatar: avatar && AVATARS.includes(avatar) ? avatar : AVATARS[state.players.length % AVATARS.length],
+    avatar: pickAvatar(avatar, state.players.length),
     money: STARTING_MONEY,
     position: 0,
     inJail: false,
