@@ -46,7 +46,7 @@ function tileLabel(tile: Tile): string {
     case 'free':
       return 'WARKOP';
     case 'tol':
-      return tile.name;
+      return 'PINTU TOL';
     case 'property':
       return tile.name;
   }
