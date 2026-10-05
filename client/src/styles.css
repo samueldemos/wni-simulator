@@ -714,9 +714,10 @@ input:focus {
 }
 .tile-price {
   margin-top: auto;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   color: var(--red-deep);
+  white-space: nowrap;
 }
 .tile-price::before {
   content: 'Rp ';
@@ -865,6 +866,10 @@ input:focus {
 .board-center {
   grid-row: 2 / 11;
   grid-column: 2 / 11;
+  /* jangan biarkan konten tengah memaksa baris grid jadi lebih tinggi */
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1339,7 +1344,7 @@ input:focus {
    ------------------------------------------------------------ */
 @media (min-width: 721px) and (max-width: 1180px) and (orientation: landscape) {
   .game {
-    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 260px);
     gap: var(--s-3);
     padding: var(--s-3);
     align-items: start;
@@ -1348,11 +1353,19 @@ input:focus {
     position: static;
     min-width: 0;
   }
-  /* papan = sisi terkecil antara lebar kolom & tinggi layar, biar tak kepotong */
+  /* Papan WAJIB kotak. Set lebar DAN tinggi sama persis (pakai var) agar grid
+     tak bisa memanjang; aspect-ratio tidak cukup karena konten grid memaksa. */
   .board {
-    width: min(100%, calc(100vh - 110px));
+    --sz: min(calc(100vw - 310px), calc(100vh - 90px));
+    width: var(--sz);
+    height: var(--sz);
+    aspect-ratio: auto;
     gap: 2px;
     padding: var(--s-2);
+  }
+  .game-main {
+    align-items: flex-start;
+    justify-content: center;
   }
 }
 

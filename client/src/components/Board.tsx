@@ -75,6 +75,16 @@ function tileIcon(tile: Tile): string {
   }
 }
 
+// Format harga ringkas agar muat di petak kecil (mis. 2.400.000 -> "2,4jt").
+function shortRupiah(n: number): string {
+  if (n >= 1_000_000) {
+    const jt = n / 1_000_000;
+    return (Number.isInteger(jt) ? jt.toString() : jt.toFixed(1).replace('.', ',')) + 'jt';
+  }
+  if (n >= 1_000) return Math.round(n / 1_000) + 'rb';
+  return n.toString();
+}
+
 // Emoji ikon kecil per pulau untuk hiasan papan tengah.
 const ISLAND_EMOJI: Record<string, string> = {
   papua: '🏝️',
@@ -120,7 +130,7 @@ export function Board({ state }: Props) {
             <div className="tile-name">{tileLabel(tile)}</div>
             {isProperty && (
               <div className="tile-price">
-                {(tile as PropertyTile).price.toLocaleString('id-ID')}
+                {shortRupiah((tile as PropertyTile).price)}
               </div>
             )}
             {prop && prop.ownerId && (
