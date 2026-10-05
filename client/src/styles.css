@@ -19,7 +19,7 @@
   /* --- Teks --- */
   --text: #eef2fb;
   --text-dim: #aab6cf;
-  --text-faint: #6f7d99;
+  --text-faint: #8795ae;
 
   /* --- Aksen (nuansa Indonesia) --- */
   --red: #ef4444;
@@ -59,6 +59,17 @@
 
 * {
   box-sizing: border-box;
+}
+
+/* Keyboard focus indicator (R-32): jelas & konsisten di semua kontrol. */
+:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* mouse-click tidak memunculkan ring (hanya keyboard) */
+:focus:not(:focus-visible) {
+  outline: none;
 }
 
 html,
@@ -141,7 +152,7 @@ h3 {
 }
 .sound-toggle:hover {
   background: var(--surface);
-  box-shadow: var(--glow-gold);
+  border-color: var(--border-strong);
 }
 .sound-toggle:active {
   transform: scale(0.94);
@@ -294,9 +305,7 @@ h3 {
   margin-bottom: var(--s-8);
 }
 .feat {
-  background: var(--surface);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--surface-solid);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   padding: var(--s-6) var(--s-4);
@@ -347,9 +356,7 @@ h3 {
 .lobby-card {
   width: 100%;
   max-width: 460px;
-  background: var(--surface);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  background: var(--surface-solid);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   padding: var(--s-8);
@@ -392,7 +399,7 @@ input::placeholder {
 input:focus {
   outline: none;
   border-color: var(--gold);
-  box-shadow: var(--glow-gold);
+  box-shadow: 0 0 0 2px rgba(255, 194, 61, 0.35);
 }
 .divider {
   position: relative;
@@ -510,7 +517,7 @@ input:focus {
   margin: var(--s-3) 0 var(--s-5);
 }
 .avatar-preview .avatar {
-  box-shadow: var(--glow-gold);
+  border-color: var(--gold);
 }
 .avatar-preview-label {
   color: var(--gold);
@@ -538,8 +545,7 @@ input:focus {
 }
 .avatar-choice.selected {
   border-color: var(--gold);
-  box-shadow: var(--glow-gold);
-  background: rgba(255, 194, 61, 0.1);
+  background: rgba(255, 194, 61, 0.12);
 }
 .photo-row {
   display: flex;
@@ -755,9 +761,8 @@ input:focus {
   gap: var(--s-4);
   padding: var(--s-4);
   border-radius: var(--r-md);
-  background: radial-gradient(circle at 50% 35%, rgba(20, 27, 46, 0.85), rgba(11, 15, 26, 0.95));
+  background: radial-gradient(circle at 50% 35%, rgba(20, 27, 46, 0.92), rgba(11, 15, 26, 0.97));
   border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(2px);
 }
 .center-decks {
   display: flex;
@@ -840,9 +845,7 @@ input:focus {
   gap: var(--s-4);
 }
 .panel {
-  background: var(--surface);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--surface-solid);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   padding: var(--s-5);

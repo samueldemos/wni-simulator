@@ -119,7 +119,7 @@ export function Lobby({ socket, state, playerId, onError }: Props) {
           <p className="landing-tagline">
             Caplok tanah dari Papua sampai Jawa, tarik kartu <b>Musibah</b> &{' '}
             <b>Takdir</b> yang bikin ngakak, dan hati-hati{' '}
-            <b>ketahuan korupsi</b> — kena OTT KPK, harta disita negara! 😏
+            <b>ketahuan korupsi</b>: kena OTT KPK, harta disita negara! 😏
           </p>
 
           <div className="landing-features">
