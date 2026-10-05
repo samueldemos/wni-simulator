@@ -3,6 +3,7 @@ import type { Card, CardDeck, GameState } from '@wni/shared';
 import { createSocket, type GameSocket } from './socket';
 import { Lobby } from './components/Lobby';
 import { Game } from './components/Game';
+import { CardModal } from './components/CardModal';
 
 export interface ChatMessage {
   name: string;
@@ -35,8 +36,8 @@ export function App() {
     socket.on('chat:message', (m) => setChat((prev) => [...prev, m].slice(-100)));
     socket.on('card:drawn', (payload) => {
       setDrawnCard(payload);
-      // auto-dismiss setelah 5 detik
-      window.setTimeout(() => setDrawnCard(null), 5000);
+      // auto-dismiss setelah 6 detik (atau pemain klik "Oke")
+      window.setTimeout(() => setDrawnCard(null), 6000);
     });
     socket.on('error:msg', ({ message }) => {
       setError(message);
@@ -66,14 +67,7 @@ export function App() {
       </header>
 
       {error && <div className="toast error">{error}</div>}
-      {drawnCard && (
-        <div className={`card-popup ${drawnCard.deck}`}>
-          <div className="card-popup-title">
-            {drawnCard.deck === 'musibah' ? '⚠️ Kartu Musibah' : '✨ Kartu Takdir'}
-          </div>
-          <div className="card-popup-text">{drawnCard.card.text}</div>
-        </div>
-      )}
+      <CardModal drawn={drawnCard} onClose={() => setDrawnCard(null)} />
 
       {!state || state.phase === 'lobby' ? (
         <Lobby

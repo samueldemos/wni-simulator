@@ -57,12 +57,12 @@ function broadcast(roomCode: string): void {
 }
 
 io.on('connection', (socket) => {
-  socket.on('room:create', ({ name }, cb) => {
+  socket.on('room:create', ({ name, avatar }, cb) => {
     const trimmed = (name ?? '').trim().slice(0, 20) || 'Pemain';
     const roomCode = genRoomCode();
     const state = createInitialState(roomCode);
     rooms.set(roomCode, state);
-    addPlayer(state, socket.id, trimmed);
+    addPlayer(state, socket.id, trimmed, avatar);
     socket.join(roomCode);
     socketRoom.set(socket.id, roomCode);
     socket.emit('you:are', { playerId: socket.id });
@@ -70,14 +70,14 @@ io.on('connection', (socket) => {
     broadcast(roomCode);
   });
 
-  socket.on('room:join', ({ roomCode, name }, cb) => {
+  socket.on('room:join', ({ roomCode, name, avatar }, cb) => {
     const code = (roomCode ?? '').trim().toUpperCase();
     const state = rooms.get(code);
     if (!state) return cb({ ok: false, error: 'Room tidak ditemukan.' });
     if (state.phase !== 'lobby')
       return cb({ ok: false, error: 'Permainan sudah dimulai.' });
     const trimmed = (name ?? '').trim().slice(0, 20) || 'Pemain';
-    const player = addPlayer(state, socket.id, trimmed);
+    const player = addPlayer(state, socket.id, trimmed, avatar);
     if (!player) return cb({ ok: false, error: 'Room penuh.' });
     socket.join(code);
     socketRoom.set(socket.id, code);

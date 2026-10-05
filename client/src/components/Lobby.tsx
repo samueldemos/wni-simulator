@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { GameState } from '@wni/shared';
+import { AVATARS, type GameState } from '@wni/shared';
 import type { GameSocket } from '../socket';
 
 interface Props {
@@ -11,6 +11,7 @@ interface Props {
 
 export function Lobby({ socket, state, playerId, onError }: Props) {
   const [name, setName] = useState('');
+  const [avatar, setAvatar] = useState(AVATARS[0]);
   const [joinCode, setJoinCode] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -19,7 +20,7 @@ export function Lobby({ socket, state, playerId, onError }: Props) {
   const create = () => {
     if (!name.trim()) return onError('Isi nama dulu.');
     setBusy(true);
-    socket.emit('room:create', { name }, (res) => {
+    socket.emit('room:create', { name, avatar }, (res) => {
       setBusy(false);
       if (!res.ok) onError(res.error ?? 'Gagal membuat room.');
     });
@@ -29,7 +30,7 @@ export function Lobby({ socket, state, playerId, onError }: Props) {
     if (!name.trim()) return onError('Isi nama dulu.');
     if (!joinCode.trim()) return onError('Isi kode room.');
     setBusy(true);
-    socket.emit('room:join', { roomCode: joinCode, name }, (res) => {
+    socket.emit('room:join', { roomCode: joinCode, name, avatar }, (res) => {
       setBusy(false);
       if (!res.ok) onError(res.error ?? 'Gagal bergabung.');
     });
@@ -57,7 +58,9 @@ export function Lobby({ socket, state, playerId, onError }: Props) {
           <ul className="playerlist">
             {state.players.map((p) => (
               <li key={p.id}>
-                <span className="dot" style={{ background: p.color }} />
+                <span className="avatar" style={{ borderColor: p.color }}>
+                  {p.avatar}
+                </span>
                 {p.name}
                 {p.isHost && <span className="badge">Host</span>}
                 {p.id === playerId && <span className="badge you">Kamu</span>}
@@ -90,6 +93,21 @@ export function Lobby({ socket, state, playerId, onError }: Props) {
           Monopoli bertema Indonesia. Beli kota, bangun properti, hindari
           korupsi (atau tidak 😏). Pemain terakhir yang bertahan menang.
         </p>
+
+        <label>Pilih karakter</label>
+        <div className="avatar-picker">
+          {AVATARS.map((a) => (
+            <button
+              key={a}
+              type="button"
+              className={`avatar-choice ${avatar === a ? 'selected' : ''}`}
+              onClick={() => setAvatar(a)}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+
         <label>
           Nama kamu
           <input

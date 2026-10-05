@@ -1,12 +1,10 @@
-import { useState } from 'react';
-import {
-  BOARD,
-  type GameState,
-  type PropertyTile,
-} from '@wni/shared';
+import { useEffect, useRef, useState } from 'react';
+import { BOARD, type GameState, type PropertyTile } from '@wni/shared';
 import type { GameSocket } from '../socket';
 import type { ChatMessage } from '../App';
 import { Board } from './Board';
+import { Dice } from './Dice';
+import { AnimatedMoney } from './AnimatedMoney';
 
 interface Props {
   socket: GameSocket;
@@ -21,6 +19,8 @@ function rupiah(n: number): string {
 
 export function Game({ socket, state, playerId, chat }: Props) {
   const [chatInput, setChatInput] = useState('');
+  const [rolling, setRolling] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   const me = state.players.find((p) => p.id === playerId);
   const current = state.players[state.currentPlayerIndex];
@@ -31,6 +31,19 @@ export function Game({ socket, state, playerId, chat }: Props) {
       ? state.properties.find((p) => p.tileIndex === myTile.index)
       : undefined;
 
+  // Hentikan animasi dadu ketika state baru (hasil dadu) tiba.
+  useEffect(() => {
+    if (state.lastDice) {
+      const t = window.setTimeout(() => setRolling(false), 700);
+      return () => window.clearTimeout(t);
+    }
+  }, [state.lastDice]);
+
+  // Auto-scroll chat ke bawah.
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chat.length]);
+
   const canBuy =
     myTurn &&
     state.turnStage === 'awaiting-action' &&
@@ -39,7 +52,10 @@ export function Game({ socket, state, playerId, chat }: Props) {
     me &&
     me.money >= (myTile as PropertyTile).price;
 
-  const roll = () => socket.emit('turn:roll', () => {});
+  const roll = () => {
+    setRolling(true);
+    socket.emit('turn:roll', () => {});
+  };
   const buy = () => socket.emit('turn:buy', () => {});
   const end = () => socket.emit('turn:end', () => {});
   const payJail = () => socket.emit('jail:pay', () => {});
@@ -54,16 +70,16 @@ export function Game({ socket, state, playerId, chat }: Props) {
     setChatInput('');
   };
 
-  // Properti milikku yang bisa dibangun (grup pulau dikuasai penuh).
   const myBuildable = state.properties.filter((p) => {
     if (p.ownerId !== playerId) return false;
     const tile = BOARD[p.tileIndex] as PropertyTile;
     const group = BOARD.filter(
-      (t): t is PropertyTile =>
-        t.type === 'property' && t.island === tile.island,
+      (t): t is PropertyTile => t.type === 'property' && t.island === tile.island,
     );
     const ownsAll = group.every(
-      (t) => state.properties.find((x) => x.tileIndex === t.index)?.ownerId === playerId,
+      (t) =>
+        state.properties.find((x) => x.tileIndex === t.index)?.ownerId ===
+        playerId,
     );
     return ownsAll && p.houses < 5;
   });
@@ -87,19 +103,23 @@ export function Game({ socket, state, playerId, chat }: Props) {
                   (p.bankrupt ? 'bankrupt' : '')
                 }
               >
-                <span className="dot" style={{ background: p.color }} />
+                <span className="avatar" style={{ borderColor: p.color }}>
+                  {p.avatar}
+                </span>
                 <span className="pname">
                   {p.name}
                   {p.id === playerId && ' (kamu)'}
                 </span>
-                <span className="pmoney">{rupiah(p.money)}</span>
+                <span className="pmoney">
+                  <AnimatedMoney value={p.money} />
+                </span>
                 {p.inJail && <span className="jailtag">🔒</span>}
                 {p.bankrupt && <span className="jailtag">💀</span>}
               </li>
             ))}
           </ul>
           {state.pot > 0 && (
-            <div className="pot">Kas Negara: {rupiah(state.pot)}</div>
+            <div className="pot">💰 Kas Negara: {rupiah(state.pot)}</div>
           )}
         </section>
 
@@ -115,18 +135,15 @@ export function Game({ socket, state, playerId, chat }: Props) {
 
           {state.phase === 'finished' && state.winnerId && (
             <div className="winner">
-              Pemenang:{' '}
+              🏆 Pemenang:{' '}
               <strong>
                 {state.players.find((p) => p.id === state.winnerId)?.name}
               </strong>
             </div>
           )}
 
-          {state.lastDice && (
-            <div className="dice">
-              🎲 {state.lastDice[0]} + {state.lastDice[1]} ={' '}
-              {state.lastDice[0] + state.lastDice[1]}
-            </div>
+          {(state.lastDice || rolling) && (
+            <Dice values={state.lastDice} rolling={rolling} />
           )}
 
           {state.phase === 'playing' && myTurn && me && (
@@ -152,8 +169,12 @@ export function Game({ socket, state, playerId, chat }: Props) {
               )}
 
               {state.turnStage === 'awaiting-roll' && (
-                <button className="btn primary" onClick={roll}>
-                  🎲 Lempar Dadu
+                <button
+                  className="btn primary"
+                  disabled={rolling}
+                  onClick={roll}
+                >
+                  🎲 {rolling ? 'Melempar...' : 'Lempar Dadu'}
                 </button>
               )}
 
@@ -221,6 +242,7 @@ export function Game({ socket, state, playerId, chat }: Props) {
                 <strong>{m.name}:</strong> {m.text}
               </div>
             ))}
+            <div ref={chatEndRef} />
           </div>
           <div className="chat-input">
             <input

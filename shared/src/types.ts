@@ -110,6 +110,7 @@ export interface Player {
   id: string; // socket/session id
   name: string;
   color: string;
+  avatar: string; // emoji karakter
   money: number;
   position: number; // tile index
   inJail: boolean;
@@ -162,8 +163,11 @@ export interface LogEntry {
 // ---------------------------------------------------------------
 
 export interface ClientToServerEvents {
-  'room:create': (payload: { name: string }, cb: AckRoom) => void;
-  'room:join': (payload: { roomCode: string; name: string }, cb: AckRoom) => void;
+  'room:create': (payload: { name: string; avatar?: string }, cb: AckRoom) => void;
+  'room:join': (
+    payload: { roomCode: string; name: string; avatar?: string },
+    cb: AckRoom,
+  ) => void;
   'game:start': (cb: AckBasic) => void;
   'turn:roll': (cb: AckBasic) => void;
   'turn:buy': (cb: AckBasic) => void;
@@ -189,6 +193,22 @@ export type AckRoom = (res: {
   roomCode?: string;
   playerId?: string;
 }) => void;
+
+// Avatar karakter yang bisa dipilih pemain
+export const AVATARS = [
+  '😎',
+  '🧕',
+  '👳‍♂️',
+  '👩‍💼',
+  '🧑‍🌾',
+  '👨‍🍳',
+  '🕴️',
+  '🧑‍🎤',
+  '👮',
+  '🤵',
+  '👸',
+  '🦸',
+];
 
 // Starting constants
 export const STARTING_MONEY = 15_000_000; // Rp 15 juta

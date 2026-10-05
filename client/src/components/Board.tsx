@@ -10,31 +10,18 @@ interface Props {
   state: GameState;
 }
 
-// Board is 28 tiles = 8 per side sharing corners (0,7,14,21 corners => actually
-// our board has 28 tiles; arrange as 8x8 ring: 8 top, 8 right... we use a
-// generic ring layout computing grid position per index for a 8-per-side ring).
-
-// We render a ring on an 8x8 CSS grid. 28 tiles => 8 bottom + 7 left + 8 top + 7 right? 
-// Simpler: compute perimeter positions for N tiles on a square grid.
-
-const SIDE = 8; // 8x8 grid -> perimeter = 28 cells. Perfect for 28 tiles.
+const SIDE = 8; // 8x8 grid -> perimeter = 28 cells.
 
 function gridPos(index: number): { row: number; col: number } {
-  // Perimeter walk starting bottom-right going counter-clockwise (Monopoly style:
-  // START bottom-right corner, moving left along the bottom).
   const n = index;
   if (n <= 7) {
-    // bottom row: right -> left (col 8..1), row 8
-    return { row: SIDE, col: SIDE - n };
+    return { row: SIDE, col: SIDE - n }; // bottom: right -> left
   } else if (n <= 14) {
-    // left column: bottom -> top (row 8..1), col 1
-    return { row: SIDE - (n - 7), col: 1 };
+    return { row: SIDE - (n - 7), col: 1 }; // left: bottom -> top
   } else if (n <= 21) {
-    // top row: left -> right (col 1..8), row 1
-    return { row: 1, col: 1 + (n - 14) };
+    return { row: 1, col: 1 + (n - 14) }; // top: left -> right
   } else {
-    // right column: top -> bottom (row 1..8), col 8
-    return { row: 1 + (n - 21), col: SIDE };
+    return { row: 1 + (n - 21), col: SIDE }; // right: top -> bottom
   }
 }
 
@@ -81,6 +68,8 @@ function tileIcon(tile: Tile): string {
 }
 
 export function Board({ state }: Props) {
+  const current = state.players[state.currentPlayerIndex];
+
   return (
     <div className="board">
       {BOARD.map((tile) => {
@@ -93,25 +82,20 @@ export function Board({ state }: Props) {
           prop?.ownerId != null
             ? state.players.find((p) => p.id === prop.ownerId)
             : undefined;
-        const here = state.players.filter(
-          (p) => p.position === tile.index && !p.bankrupt,
-        );
         const isProperty = tile.type === 'property';
         const islandColor = isProperty
           ? ISLAND_COLOR[(tile as PropertyTile).island]
           : undefined;
+        const isActive = current && current.position === tile.index;
 
         return (
           <div
             key={tile.index}
-            className={`tile tile-${tile.type}`}
+            className={`tile tile-${tile.type} ${isActive ? 'tile-active' : ''}`}
             style={{ gridRow: row, gridColumn: col }}
           >
             {isProperty && (
-              <div
-                className="tile-band"
-                style={{ background: islandColor }}
-              />
+              <div className="tile-band" style={{ background: islandColor }} />
             )}
             {!isProperty && <div className="tile-icon">{tileIcon(tile)}</div>}
             <div className="tile-name">{tileLabel(tile)}</div>
@@ -132,21 +116,38 @@ export function Board({ state }: Props) {
                 title={`Milik ${owner.name}`}
               />
             )}
-            {here.length > 0 && (
-              <div className="tile-tokens">
-                {here.map((p) => (
-                  <span
-                    key={p.id}
-                    className="token"
-                    style={{ background: p.color }}
-                    title={p.name}
-                  />
-                ))}
-              </div>
-            )}
           </div>
         );
       })}
+
+      {/* Bidak pemain: absolute agar bisa animasi gerak mulus */}
+      {state.players
+        .filter((p) => !p.bankrupt)
+        .map((p) => {
+          const { row, col } = gridPos(p.position);
+          // offset kecil supaya beberapa bidak di petak sama tidak tumpuk persis
+          const sameTile = state.players.filter(
+            (x) => !x.bankrupt && x.position === p.position,
+          );
+          const idx = sameTile.findIndex((x) => x.id === p.id);
+          const nudge = idx * 18;
+          return (
+            <div
+              key={p.id}
+              className="pawn"
+              style={{
+                gridRow: row,
+                gridColumn: col,
+                transform: `translate(${nudge}px, ${idx % 2 === 0 ? 0 : 10}px)`,
+                borderColor: p.color,
+              }}
+              title={p.name}
+            >
+              <span className="pawn-emoji">{p.avatar}</span>
+            </div>
+          );
+        })}
+
       <div className="board-center">
         <div className="board-center-title">WNI Simulator</div>
         <div className="board-center-sub">🇮🇩 Monopoli Nusantara</div>

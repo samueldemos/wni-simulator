@@ -3,6 +3,7 @@
 // The server owns GameState; clients only send intents.
 // ============================================================
 import {
+  AVATARS,
   BOARD,
   BOARD_SIZE,
   CARD_BY_ID,
@@ -84,6 +85,7 @@ export function addPlayer(
   state: GameState,
   id: string,
   name: string,
+  avatar?: string,
 ): Player | null {
   if (state.phase !== 'lobby') return null;
   if (state.players.length >= 6) return null;
@@ -91,6 +93,7 @@ export function addPlayer(
     id,
     name,
     color: PLAYER_COLORS[state.players.length % PLAYER_COLORS.length],
+    avatar: avatar && AVATARS.includes(avatar) ? avatar : AVATARS[state.players.length % AVATARS.length],
     money: STARTING_MONEY,
     position: 0,
     inJail: false,
