@@ -62,9 +62,9 @@ export const LEVEL_LABEL: Record<PropertyLevel, string> = {
 };
 
 export const LEVEL_ICON: Record<PropertyLevel, string> = {
-  0: '🟫',
-  1: '🏠',
-  2: '🏯',
+  0: '🌾', // tanah kosong (lahan)
+  1: '🏠', // rumah subsidi (rumah kecil)
+  2: '🏰', // rumah OKB (mewah)
 };
 
 export interface PropertyTile {

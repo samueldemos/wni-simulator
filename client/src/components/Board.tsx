@@ -123,8 +123,11 @@ export function Board({ state }: Props) {
                 {(tile as PropertyTile).price.toLocaleString('id-ID')}
               </div>
             )}
-            {prop && prop.ownerId && prop.level > 0 && (
-              <div className="tile-houses" title={LEVEL_LABEL[prop.level]}>
+            {prop && prop.ownerId && (
+              <div
+                className={`tile-level level-${prop.level}`}
+                title={LEVEL_LABEL[prop.level]}
+              >
                 {LEVEL_ICON[prop.level]}
               </div>
             )}

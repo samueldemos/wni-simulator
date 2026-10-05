@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   BOARD,
+  LEVEL_ICON,
   LEVEL_LABEL,
   TOL_INDICES,
   type GameState,
@@ -295,7 +296,8 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
                   >
                     <span className="choice-item-name">{tile.name}</span>
                     <span className="choice-item-sub">
-                      {LEVEL_LABEL[p.level]} → {LEVEL_LABEL[nextLvl]}
+                      {LEVEL_ICON[p.level]} {LEVEL_LABEL[p.level]} →{' '}
+                      {LEVEL_ICON[nextLvl]} {LEVEL_LABEL[nextLvl]}
                     </span>
                     <span className="choice-item-cost">
                       {cost !== null ? rupiah(cost) : 'Maks'}
