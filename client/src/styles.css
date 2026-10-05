@@ -56,6 +56,7 @@ html,
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 body {
@@ -1318,9 +1319,12 @@ input:focus {
 /* ============================================================
    Responsive
    ============================================================ */
+/* Tablet & bawah: layout 1 kolom */
 @media (max-width: 1000px) {
   .game {
     grid-template-columns: 1fr;
+    gap: var(--s-4);
+    padding: var(--s-4);
   }
   .game-main {
     position: static;
@@ -1337,14 +1341,161 @@ input:focus {
     margin: 0 auto;
   }
 }
+
+/* HP (portrait) */
 @media (max-width: 640px) {
   .topbar {
-    padding: var(--s-3) var(--s-4);
+    padding: var(--s-2) var(--s-3);
+  }
+  .topbar h1 {
+    font-size: 16px;
+  }
+  .flag {
+    font-size: 18px;
+  }
+  .conn {
+    font-size: 10px;
+    padding: var(--s-1) var(--s-2);
+  }
+  .sound-toggle {
+    width: 34px;
+    height: 32px;
+    font-size: 15px;
+  }
+
+  .game {
+    padding: var(--s-3);
+    gap: var(--s-3);
+  }
+
+  /* Papan: pas selebar layar, tetap kotak tapi tidak meluber */
+  .board {
+    width: 100%;
+    max-width: 100%;
+    gap: 2px;
+    padding: var(--s-2);
+    border-width: 2px;
+  }
+  /* petak lebih padat di HP */
+  .tile {
+    padding: 2px;
+    font-size: 7px;
+    border-width: 1px;
+    border-radius: 4px;
+  }
+  .tile-band {
+    height: 7px;
+    margin: -2px -2px 2px;
+  }
+  .tile-icon {
+    font-size: 10px;
+    margin-bottom: 0;
+  }
+  .tile-name {
+    font-size: 7px;
+    line-height: 1.05;
+  }
+  .tile-price {
+    font-size: 6px;
+  }
+  .tile-price::before {
+    content: '';
+  }
+  .tile-owner {
+    width: 7px;
+    height: 7px;
+    top: 2px;
+    right: 2px;
+  }
+  .tile-level {
+    top: 9px;
+    right: 1px;
+    font-size: 8px;
+    padding: 0 2px;
+    border-width: 1px;
+  }
+
+  /* bidak lebih kecil */
+  .pawn {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+    font-size: 11px;
+  }
+
+  /* papan tengah: judul & deck mengecil */
+  .board-center {
+    gap: var(--s-2);
+    padding: var(--s-2);
+  }
+  .center-decks {
+    gap: var(--s-3);
+  }
+  .deck {
+    width: 48px;
+    height: 64px;
+    gap: 2px;
+  }
+  .deck-icon {
+    font-size: 20px;
+  }
+  .deck-label {
+    font-size: 8px;
+  }
+  .board-center-title {
+    font-size: 16px;
+  }
+  .board-center-sub {
+    font-size: 9px;
+  }
+  .island-chip {
+    font-size: 8px;
+    padding: 1px 6px;
+  }
+
+  /* panel & sidebar full width di bawah papan */
+  .sidebar {
+    gap: var(--s-3);
+  }
+  .panel {
+    padding: var(--s-4);
+  }
+
+  /* landing diringkas */
+  .landing {
+    padding: var(--s-5) var(--s-4);
   }
   .landing-info,
   .landing-cta,
   .landing-tagline {
     max-width: none;
+  }
+  .landing-title {
+    font-size: 36px;
+  }
+
+  /* dialog pilihan: hampir full width */
+  .choice-box {
+    padding: var(--s-5);
+  }
+  .flip-card {
+    width: 90vw;
+    height: 70vh;
+    max-height: 440px;
+  }
+}
+
+/* HP sangat kecil */
+@media (max-width: 380px) {
+  .tile-name {
+    font-size: 6px;
+  }
+  .deck {
+    width: 42px;
+    height: 56px;
+  }
+  .board-center-title {
+    font-size: 14px;
   }
 }
 
