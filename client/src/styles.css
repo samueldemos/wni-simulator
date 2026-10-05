@@ -1330,17 +1330,18 @@ input:focus {
    ------------------------------------------------------------ */
 @media (min-width: 721px) and (max-width: 1180px) {
   .game {
-    grid-template-columns: 1fr minmax(240px, 320px);
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
     gap: var(--s-3);
     padding: var(--s-3);
     align-items: start;
   }
   .game-main {
     position: static;
+    min-width: 0;
   }
-  /* papan = sisi terkecil antara lebar-tersedia & tinggi-layar */
+  /* papan = sisi terkecil antara lebar kolom & tinggi layar, biar tak kepotong */
   .board {
-    width: min(100%, calc(100vh - 120px));
+    width: min(100%, calc(100vh - 110px));
     gap: 2px;
     padding: var(--s-2);
   }
@@ -1384,16 +1385,21 @@ input:focus {
     padding: var(--s-3);
     gap: var(--s-3);
     justify-items: center;
+    overflow-x: hidden;
   }
   .game-main {
     position: static;
     width: 100%;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
   }
 
-  /* Papan: selebar layar TAPI dibatasi tinggi agar muat tanpa kepotong.
-     Sisakan ruang untuk topbar + tabbar + FAB. */
+  /* Papan: ukuran = sisi terkecil antara lebar layar & sisa tinggi.
+     Dihitung dari viewport (vw/vh), bukan 100% parent, agar TIDAK meluber.
+     Sisakan ruang: topbar ~56px, tabbar ~52px, FAB ~70px, padding. */
   .board {
-    width: min(100%, calc(100vh - 230px));
+    width: min(calc(100vw - 24px), calc(100vh - 210px));
     max-width: 100%;
     gap: 2px;
     padding: var(--s-2);
