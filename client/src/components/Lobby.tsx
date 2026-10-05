@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AVATARS, type GameState } from '@wni/shared';
+import { AVATAR_OPTIONS, type GameState } from '@wni/shared';
 import type { GameSocket } from '../socket';
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
 
 export function Lobby({ socket, state, playerId, onError }: Props) {
   const [name, setName] = useState('');
-  const [avatar, setAvatar] = useState(AVATARS[0]);
+  const [avatar, setAvatar] = useState(AVATAR_OPTIONS[0].emoji);
   const [joinCode, setJoinCode] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -94,16 +94,22 @@ export function Lobby({ socket, state, playerId, onError }: Props) {
           korupsi (atau tidak 😏). Pemain terakhir yang bertahan menang.
         </p>
 
-        <label>Pilih karakter</label>
+        <label>
+          Pilih karakter —{' '}
+          <span className="avatar-name">
+            {AVATAR_OPTIONS.find((o) => o.emoji === avatar)?.label}
+          </span>
+        </label>
         <div className="avatar-picker">
-          {AVATARS.map((a) => (
+          {AVATAR_OPTIONS.map((o) => (
             <button
-              key={a}
+              key={o.emoji}
               type="button"
-              className={`avatar-choice ${avatar === a ? 'selected' : ''}`}
-              onClick={() => setAvatar(a)}
+              title={o.label}
+              className={`avatar-choice ${avatar === o.emoji ? 'selected' : ''}`}
+              onClick={() => setAvatar(o.emoji)}
             >
-              {a}
+              {o.emoji}
             </button>
           ))}
         </div>

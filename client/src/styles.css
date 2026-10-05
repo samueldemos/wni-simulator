@@ -980,3 +980,67 @@ input:focus {
     margin-top: -5px;
   }
 }
+
+/* ============================================================
+   Savage mode: reaksi emoji floating, sound toggle, dsb.
+   ============================================================ */
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sound-toggle {
+  background: rgba(0, 0, 0, 0.28);
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  width: 38px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.sound-toggle:hover {
+  background: rgba(0, 0, 0, 0.45);
+}
+.sound-toggle:active {
+  transform: scale(0.92);
+}
+
+.avatar-name {
+  color: var(--gold);
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ---------- Floating reactions ---------- */
+.reactions-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 55;
+  overflow: hidden;
+}
+.reaction {
+  position: absolute;
+  bottom: 30%;
+  font-size: 34px;
+  animation: float-up 1.8s ease-out forwards;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+@keyframes float-up {
+  0% {
+    transform: translateY(0) scale(0.5) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(-20px) scale(1.2) rotate(-8deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-220px) scale(1) rotate(10deg);
+    opacity: 0;
+  }
+}

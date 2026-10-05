@@ -5,6 +5,7 @@ import type { ChatMessage } from '../App';
 import { Board } from './Board';
 import { Dice } from './Dice';
 import { AnimatedMoney } from './AnimatedMoney';
+import { sfx } from '../sound';
 
 interface Props {
   socket: GameSocket;
@@ -54,6 +55,7 @@ export function Game({ socket, state, playerId, chat }: Props) {
 
   const roll = () => {
     setRolling(true);
+    sfx.dice();
     socket.emit('turn:roll', () => {});
   };
   const buy = () => socket.emit('turn:buy', () => {});

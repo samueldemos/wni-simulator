@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { BOARD_SIZE, type Player } from '@wni/shared';
+import { sfx } from './sound';
 
 const STEP_MS = 260; // kecepatan jalan per petak
 
@@ -47,6 +48,7 @@ export function useStepPositions(players: Player[]): {
           : (cur + 1) % BOARD_SIZE;
         posRef.current[p.id] = next;
         setDisplay((d) => ({ ...d, [p.id]: next }));
+        sfx.step();
         if (next === target) {
           window.clearInterval(timersRef.current[p.id]);
           delete timersRef.current[p.id];

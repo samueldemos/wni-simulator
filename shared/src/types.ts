@@ -194,21 +194,28 @@ export type AckRoom = (res: {
   playerId?: string;
 }) => void;
 
-// Avatar karakter yang bisa dipilih pemain
-export const AVATARS = [
-  '😎',
-  '🧕',
-  '👳‍♂️',
-  '👩‍💼',
-  '🧑‍🌾',
-  '👨‍🍳',
-  '🕴️',
-  '🧑‍🎤',
-  '👮',
-  '🤵',
-  '👸',
-  '🦸',
+// Avatar karakter khas WNI yang bisa dipilih pemain.
+// label dipakai sebagai tooltip / nama karakter.
+export interface AvatarOption {
+  emoji: string;
+  label: string;
+}
+export const AVATAR_OPTIONS: AvatarOption[] = [
+  { emoji: '🧕', label: 'Emak-emak Arisan' },
+  { emoji: '🛵', label: 'Driver Ojol' },
+  { emoji: '👮', label: 'Oknum' },
+  { emoji: '🕴️', label: 'Pejabat' },
+  { emoji: '💂', label: 'Satpam Komplek' },
+  { emoji: '🧑‍🌾', label: 'Petani' },
+  { emoji: '👨‍🍳', label: 'Tukang Bakso' },
+  { emoji: '🤵', label: 'Pak RT' },
+  { emoji: '🧑‍🎤', label: 'Selebgram' },
+  { emoji: '👩‍💼', label: 'Bos UMKM' },
+  { emoji: '🧔', label: 'Preman Insaf' },
+  { emoji: '😎', label: 'Sultan Mendadak' },
 ];
+// list emoji saja (untuk kompatibilitas lama)
+export const AVATARS = AVATAR_OPTIONS.map((a) => a.emoji);
 
 // Starting constants
 export const STARTING_MONEY = 15_000_000; // Rp 15 juta
