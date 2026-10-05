@@ -46,10 +46,19 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
       ? state.properties.find((p) => p.tileIndex === myTile.index)
       : undefined;
 
-  // Reset "sentRoll" begitu animasi dadu benar-benar dimulai (dikontrol sequencer).
+  // Reset "sentRoll" saat animasi dadu dimulai (alur normal).
   useEffect(() => {
     if (diceRolling) setSentRoll(false);
   }, [diceRolling]);
+
+  // Pengaman anti-nyangkut: apa pun yang terjadi, "sentRoll" dibatalkan paling
+  // lama 2,5 detik setelah klik, supaya tombol tidak terkunci "MELEMPAR..."
+  // (mis. pada giliran ulang akibat dadu kembar).
+  useEffect(() => {
+    if (!sentRoll) return;
+    const t = window.setTimeout(() => setSentRoll(false), 2500);
+    return () => window.clearTimeout(t);
+  }, [sentRoll]);
 
   // Auto-scroll chat ke bawah.
   useEffect(() => {

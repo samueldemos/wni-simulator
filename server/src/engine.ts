@@ -696,6 +696,9 @@ export function endTurn(state: GameState, playerId: string): string | null {
     state.doublesCount > 0
   ) {
     state.turnStage = 'awaiting-roll';
+    // bersihkan dadu agar lemparan berikutnya selalu terdeteksi sebagai perubahan
+    // (mencegah animasi/tombol roll nyangkut saat giliran ulang).
+    state.lastDice = null;
     log(state, `${player.name} dapat giliran lagi (dadu kembar).`);
     return null;
   }
