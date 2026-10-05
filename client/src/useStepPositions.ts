@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BOARD_SIZE, type Player } from '@wni/shared';
 import { sfx } from './sound';
 
-const STEP_MS = 260; // kecepatan jalan per petak
+const STEP_MS = 300; // kecepatan jalan per petak (sinkron dgn useGameSequencer)
 
 /**
  * Mengembalikan posisi "tampilan" tiap pemain yang mengejar posisi

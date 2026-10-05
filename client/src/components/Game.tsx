@@ -12,15 +12,16 @@ interface Props {
   state: GameState;
   playerId: string | null;
   chat: ChatMessage[];
+  diceRolling: boolean;
 }
 
 function rupiah(n: number): string {
   return 'Rp ' + n.toLocaleString('id-ID');
 }
 
-export function Game({ socket, state, playerId, chat }: Props) {
+export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
   const [chatInput, setChatInput] = useState('');
-  const [rolling, setRolling] = useState(false);
+  const [sentRoll, setSentRoll] = useState(false);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   const me = state.players.find((p) => p.id === playerId);
@@ -32,13 +33,10 @@ export function Game({ socket, state, playerId, chat }: Props) {
       ? state.properties.find((p) => p.tileIndex === myTile.index)
       : undefined;
 
-  // Hentikan animasi dadu ketika state baru (hasil dadu) tiba.
+  // Reset "sentRoll" begitu animasi dadu benar-benar dimulai (dikontrol sequencer).
   useEffect(() => {
-    if (state.lastDice) {
-      const t = window.setTimeout(() => setRolling(false), 700);
-      return () => window.clearTimeout(t);
-    }
-  }, [state.lastDice]);
+    if (diceRolling) setSentRoll(false);
+  }, [diceRolling]);
 
   // Auto-scroll chat ke bawah.
   useEffect(() => {
@@ -54,7 +52,7 @@ export function Game({ socket, state, playerId, chat }: Props) {
     me.money >= (myTile as PropertyTile).price;
 
   const roll = () => {
-    setRolling(true);
+    setSentRoll(true);
     sfx.dice();
     socket.emit('turn:roll', () => {});
   };
@@ -144,8 +142,11 @@ export function Game({ socket, state, playerId, chat }: Props) {
             </div>
           )}
 
-          {(state.lastDice || rolling) && (
-            <Dice values={state.lastDice} rolling={rolling} />
+          {(state.lastDice || diceRolling || sentRoll) && (
+            <Dice
+              values={state.lastDice}
+              rolling={diceRolling || sentRoll}
+            />
           )}
 
           {state.phase === 'playing' && myTurn && me && (
@@ -173,10 +174,10 @@ export function Game({ socket, state, playerId, chat }: Props) {
               {state.turnStage === 'awaiting-roll' && (
                 <button
                   className="btn primary"
-                  disabled={rolling}
+                  disabled={sentRoll || diceRolling}
                   onClick={roll}
                 >
-                  🎲 {rolling ? 'Melempar...' : 'Lempar Dadu'}
+                  🎲 {sentRoll || diceRolling ? 'Melempar...' : 'Lempar Dadu'}
                 </button>
               )}
 

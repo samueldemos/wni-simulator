@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Card, CardDeck, GameState } from '@wni/shared';
 import { createSocket, type GameSocket } from './socket';
 import { Lobby } from './components/Lobby';
@@ -9,6 +9,7 @@ import {
   useReactions,
 } from './components/FloatingReactions';
 import { sfx, setSoundEnabled, isSoundEnabled } from './sound';
+import { useGameSequencer } from './useGameSequencer';
 
 export interface ChatMessage {
   name: string;
@@ -25,9 +26,9 @@ export function App() {
   const socketRef = useRef<GameSocket | null>(null);
   const [connected, setConnected] = useState(false);
   const [playerId, setPlayerId] = useState<string | null>(null);
-  const [state, setState] = useState<GameState | null>(null);
+  const [rawState, setRawState] = useState<GameState | null>(null);
+  const [rawCard, setRawCard] = useState<DrawnCard | null>(null);
   const [chat, setChat] = useState<ChatMessage[]>([]);
-  const [drawnCard, setDrawnCard] = useState<DrawnCard | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [soundOn, setSoundOn] = useState(isSoundEnabled());
 
@@ -41,13 +42,11 @@ export function App() {
     socket.on('connect', () => setConnected(true));
     socket.on('disconnect', () => setConnected(false));
     socket.on('you:are', ({ playerId }) => setPlayerId(playerId));
-    socket.on('state:update', (s) => setState(s));
-    socket.on('chat:message', (m) => setChat((prev) => [...prev, m].slice(-100)));
-    socket.on('card:drawn', (payload) => {
-      sfx.card();
-      setDrawnCard(payload);
-      window.setTimeout(() => setDrawnCard(null), 6500);
-    });
+    socket.on('state:update', (s) => setRawState(s));
+    socket.on('chat:message', (m) =>
+      setChat((prev) => [...prev, m].slice(-100)),
+    );
+    socket.on('card:drawn', (payload) => setRawCard(payload));
     socket.on('error:msg', ({ message }) => {
       setError(message);
       window.setTimeout(() => setError(null), 3500);
@@ -58,24 +57,32 @@ export function App() {
     };
   }, []);
 
-  // Deteksi perubahan state untuk memicu suara & reaksi emoji.
+  const clearRawCard = useCallback(() => setRawCard(null), []);
+
+  // Sequencer: menahan state & kartu agar animasi berurutan & santai.
+  const { presented, card, closeCard, diceRolling } = useGameSequencer(
+    rawState,
+    rawCard,
+    clearRawCard,
+  );
+
+  // Suara + reaksi emoji dipicu dari state YANG DITAMPILKAN (presented),
+  // jadi efek muncul pas bidak sudah sampai, bukan saat data mentah tiba.
   useEffect(() => {
-    if (!state) return;
+    if (!presented) return;
     const prev = prevRef.current;
-    prevRef.current = state;
+    prevRef.current = presented;
     if (!prev) return;
 
-    // menang
-    if (state.winnerId && !prev.winnerId) {
+    if (presented.winnerId && !prev.winnerId) {
       sfx.win();
       spawn('🏆', 6);
     }
 
-    for (const p of state.players) {
+    for (const p of presented.players) {
       const old = prev.players.find((x) => x.id === p.id);
       if (!old) continue;
 
-      // perubahan uang
       const diff = p.money - old.money;
       if (diff > 0) {
         sfx.cash();
@@ -85,40 +92,39 @@ export function App() {
         spawn(diff < -1_500_000 ? '😭' : '💸', 2);
       }
 
-      // baru masuk penjara
       if (p.inJail && !old.inJail) {
         sfx.jail();
         spawn('🚔', 3);
         spawn('⛓️', 1);
       }
-
-      // baru bangkrut
-      if (p.bankrupt && !old.bankrupt) {
-        spawn('💀', 3);
-      }
+      if (p.bankrupt && !old.bankrupt) spawn('💀', 3);
     }
 
-    // properti baru dibeli
-    const newlyOwned = state.properties.filter((pr) => {
+    const bought = presented.properties.some((pr) => {
       const o = prev.properties.find((x) => x.tileIndex === pr.tileIndex);
       return o && o.ownerId === null && pr.ownerId !== null;
     });
-    if (newlyOwned.length > 0) {
+    if (bought) {
       sfx.buy();
       spawn('🏠', 2);
     }
-  }, [state, spawn]);
+  }, [presented, spawn]);
+
+  // bunyi saat kartu benar-benar muncul
+  useEffect(() => {
+    if (card) sfx.card();
+  }, [card]);
 
   const socket = socketRef.current;
   if (!socket) return null;
 
-  const inGame = state && state.phase !== 'lobby';
+  const inGame = presented && presented.phase !== 'lobby';
 
   const toggleSound = () => {
     const next = !soundOn;
     setSoundOn(next);
     setSoundEnabled(next);
-    if (next) sfx.card(); // bunyi konfirmasi
+    if (next) sfx.card();
   };
 
   return (
@@ -142,20 +148,26 @@ export function App() {
       </header>
 
       {error && <div className="toast error">{error}</div>}
-      <CardModal drawn={drawnCard} onClose={() => setDrawnCard(null)} />
+      <CardModal drawn={card} onClose={closeCard} />
       <FloatingReactions reactions={reactions} />
 
-      {!state || state.phase === 'lobby' ? (
+      {!presented || presented.phase === 'lobby' ? (
         <Lobby
           socket={socket}
-          state={state}
+          state={presented}
           playerId={playerId}
           onError={setError}
         />
       ) : null}
 
-      {inGame && state && (
-        <Game socket={socket} state={state} playerId={playerId} chat={chat} />
+      {inGame && presented && (
+        <Game
+          socket={socket}
+          state={presented}
+          playerId={playerId}
+          chat={chat}
+          diceRolling={diceRolling}
+        />
       )}
     </div>
   );
