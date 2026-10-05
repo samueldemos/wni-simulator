@@ -1333,7 +1333,7 @@ input:focus {
    LANDSCAPE sempit (tablet landscape, laptop kecil): tetap 2 kolom
    tapi papan diukur dari TINGGI layar agar tidak pernah kepotong.
    ------------------------------------------------------------ */
-@media (min-width: 721px) and (max-width: 1180px) {
+@media (min-width: 721px) and (max-width: 1180px) and (orientation: landscape) {
   .game {
     grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
     gap: var(--s-3);
@@ -1364,8 +1364,9 @@ input:focus {
   }
 }
 
-/* HP & tablet portrait: 1 kolom + sistem TAB */
-@media (max-width: 720px) {
+/* HP & semua layar portrait: 1 kolom + sistem TAB.
+   (portrait selalu stacked, apa pun lebarnya, agar sidebar tak nyamping) */
+@media (max-width: 720px), (orientation: portrait) {
   .topbar {
     padding: var(--s-2) var(--s-3);
   }
@@ -1405,9 +1406,10 @@ input:focus {
     align-items: flex-start;
   }
   .board {
-    /* sisi papan = terkecil antara (lebar layar - margin) & (sisa tinggi).
-       Pakai 100vw agar diukur dari LAYAR, bukan parent (anti-meluber). */
-    width: min(calc(100vw - 20px), calc(100svh - 180px));
+    /* Portrait: lebar layar SELALU jadi batas (HP lebih tinggi dari lebar).
+       92vw = 92% lebar layar, kotak. Sederhana & didukung semua browser. */
+    width: 92vw;
+    max-width: 92vw;
     aspect-ratio: 1 / 1;
     gap: 2px;
     padding: var(--s-2);
