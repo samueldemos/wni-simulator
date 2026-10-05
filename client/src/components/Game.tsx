@@ -32,9 +32,12 @@ function rupiah(n: number): string {
   return 'Rp ' + n.toLocaleString('id-ID');
 }
 
+type MobileTab = 'pemain' | 'properti' | 'chat' | 'riwayat';
+
 export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
   const [chatInput, setChatInput] = useState('');
   const [sentRoll, setSentRoll] = useState(false);
+  const [tab, setTab] = useState<MobileTab>('pemain');
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   const me = state.players.find((p) => p.id === playerId);
@@ -143,9 +146,27 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
         <Board state={state} />
       </div>
 
-      <aside className="sidebar">
+      {/* Tab bar — hanya tampil di HP (CSS) */}
+      <nav className="tabbar">
+        {([
+          ['pemain', '👥 Pemain'],
+          ['properti', '🏠 Properti'],
+          ['riwayat', '📜 Riwayat'],
+          ['chat', '💬 Chat'],
+        ] as [MobileTab, string][]).map(([key, label]) => (
+          <button
+            key={key}
+            className={`tabbar-btn ${tab === key ? 'active' : ''}`}
+            onClick={() => setTab(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      <aside className="sidebar" data-active-tab={tab}>
         {/* Pemain */}
-        <section className="panel">
+        <section className="panel" data-tab="pemain">
           <h3>Pemain</h3>
           <ul className="players">
             {state.players.map((p) => (
@@ -174,8 +195,8 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
           )}
         </section>
 
-        {/* Aksi */}
-        <section className="panel">
+        {/* Aksi (selalu tampil, termasuk di HP) */}
+        <section className="panel" data-tab="always">
           <h3>
             {state.phase === 'finished'
               ? '🎉 Permainan Selesai'
@@ -269,7 +290,7 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
         </section>
 
         {/* Propertiku */}
-        <section className="panel">
+        <section className="panel" data-tab="properti">
           <h3>Propertiku ({myProps.length})</h3>
           {myProps.length === 0 ? (
             <div className="hint">
@@ -311,7 +332,7 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
         </section>
 
         {/* Log */}
-        <section className="panel log-panel">
+        <section className="panel log-panel" data-tab="riwayat">
           <h3>Riwayat</h3>
           <div className="log">
             {[...state.log]
@@ -326,7 +347,7 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
         </section>
 
         {/* Chat */}
-        <section className="panel chat-panel">
+        <section className="panel chat-panel" data-tab="chat">
           <h3>Obrolan</h3>
           <div className="chat">
             {chat.map((m, i) => (

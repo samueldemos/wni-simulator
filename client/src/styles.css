@@ -652,6 +652,11 @@ input:focus {
   top: calc(64px + var(--s-5));
 }
 
+/* Tab bar (mobile only) — sembunyi di desktop */
+.tabbar {
+  display: none;
+}
+
 /* ============================================================
    Board
    ============================================================ */
@@ -1319,28 +1324,30 @@ input:focus {
 /* ============================================================
    Responsive
    ============================================================ */
-/* Tablet & bawah: layout 1 kolom (naikkan ke 1180px agar tablet landscape
-   ~1024px tidak lagi memaksa 2 kolom yang bikin sidebar menabrak papan) */
-@media (max-width: 1180px) {
+/* ------------------------------------------------------------
+   LANDSCAPE sempit (tablet landscape, laptop kecil): tetap 2 kolom
+   tapi papan diukur dari TINGGI layar agar tidak pernah kepotong.
+   ------------------------------------------------------------ */
+@media (min-width: 721px) and (max-width: 1180px) {
   .game {
-    grid-template-columns: 1fr;
-    gap: var(--s-4);
-    padding: var(--s-4);
-    justify-items: center;
+    grid-template-columns: 1fr minmax(240px, 320px);
+    gap: var(--s-3);
+    padding: var(--s-3);
+    align-items: start;
   }
   .game-main {
     position: static;
-    width: 100%;
   }
-  /* papan tetap kotak, dibatasi agar tidak kebesaran di layar lebar 1 kolom */
+  /* papan = sisi terkecil antara lebar-tersedia & tinggi-layar */
   .board {
-    width: min(72vh, 100%);
-    max-width: 640px;
+    width: min(100%, calc(100vh - 120px));
+    gap: 2px;
+    padding: var(--s-2);
   }
-  .sidebar {
-    width: 100%;
-    max-width: 640px;
-  }
+}
+
+/* landing selalu 1 kolom di bawah 1180px */
+@media (max-width: 1180px) {
   .landing-hero {
     grid-template-columns: 1fr;
   }
@@ -1351,8 +1358,8 @@ input:focus {
   }
 }
 
-/* HP (portrait) */
-@media (max-width: 640px) {
+/* HP & tablet portrait: 1 kolom + sistem TAB */
+@media (max-width: 720px) {
   .topbar {
     padding: var(--s-2) var(--s-3);
   }
@@ -1373,17 +1380,73 @@ input:focus {
   }
 
   .game {
+    grid-template-columns: 1fr;
     padding: var(--s-3);
     gap: var(--s-3);
+    justify-items: center;
+  }
+  .game-main {
+    position: static;
+    width: 100%;
   }
 
-  /* Papan: pas selebar layar, tetap kotak tapi tidak meluber */
+  /* Papan: selebar layar TAPI dibatasi tinggi agar muat tanpa kepotong.
+     Sisakan ruang untuk topbar + tabbar + FAB. */
   .board {
-    width: 100%;
+    width: min(100%, calc(100vh - 230px));
     max-width: 100%;
     gap: 2px;
     padding: var(--s-2);
     border-width: 2px;
+  }
+
+  /* ---- Tab bar ---- */
+  .tabbar {
+    display: flex;
+    width: 100%;
+    gap: var(--s-1);
+    background: var(--white);
+    border: var(--border-ink);
+    border-radius: var(--r-md);
+    padding: var(--s-1);
+    box-shadow: var(--hard-sm);
+  }
+  .tabbar-btn {
+    flex: 1;
+    padding: var(--s-2) var(--s-1);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted-ink);
+    background: transparent;
+    border: none;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+  }
+  .tabbar-btn.active {
+    background: var(--yellow);
+    color: var(--ink);
+  }
+
+  /* ---- Sidebar: tampil hanya panel sesuai tab aktif (+ Aksi selalu) ---- */
+  .sidebar {
+    width: 100%;
+    gap: var(--s-3);
+  }
+  .sidebar [data-tab] {
+    display: none;
+  }
+  .sidebar [data-tab='always'] {
+    display: block;
+  }
+  .sidebar[data-active-tab='pemain'] [data-tab='pemain'],
+  .sidebar[data-active-tab='properti'] [data-tab='properti'],
+  .sidebar[data-active-tab='riwayat'] [data-tab='riwayat'],
+  .sidebar[data-active-tab='chat'] [data-tab='chat'] {
+    display: block;
+  }
+  .panel {
+    padding: var(--s-4);
   }
   /* petak lebih padat di HP */
   .tile {
@@ -1463,13 +1526,6 @@ input:focus {
   }
 
   /* panel & sidebar full width di bawah papan */
-  .sidebar {
-    gap: var(--s-3);
-  }
-  .panel {
-    padding: var(--s-4);
-  }
-
   /* landing diringkas */
   .landing {
     padding: var(--s-5) var(--s-4);
@@ -1734,7 +1790,7 @@ input:focus {
   font-size: 14px;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 720px) {
   .fab {
     display: flex;
     gap: var(--s-2);
