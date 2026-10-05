@@ -87,6 +87,9 @@ h3,
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden; /* jaring pengaman: tak ada yang bisa meluber horizontal */
 }
 
 /* Keyboard focus (R-32) */
@@ -1382,11 +1385,15 @@ input:focus {
     font-size: 15px;
   }
 
+  /* Layout flex-fill: papan otomatis muat tanpa angka ajaib per-HP.
+     .game jadi kolom; .game-main mengisi sisa tinggi layar; papan ambil
+     sisi terkecil dari ruang itu (aspect-ratio kotak + max-w/max-h 100%). */
   .game {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     padding: var(--s-3);
     gap: var(--s-3);
-    justify-items: center;
     overflow-x: hidden;
   }
   .game-main {
@@ -1395,15 +1402,13 @@ input:focus {
     min-width: 0;
     display: flex;
     justify-content: center;
+    align-items: flex-start;
   }
-
-  /* Papan: sisi terkecil antara lebar layar & sisa tinggi (viewport, bukan
-     100% parent) agar TIDAK meluber ke kanan maupun kepotong atas/bawah.
-     Sisakan ruang topbar + tabbar + FAB. Pakai svh (small viewport height)
-     agar aman dengan bar browser mobile yang muncul-sembunyi. */
   .board {
-    width: min(calc(100vw - 20px), calc(100svh - 200px), calc(100vh - 200px));
-    max-width: calc(100vw - 20px);
+    /* sisi papan = terkecil antara (lebar layar - margin) & (sisa tinggi).
+       Pakai 100vw agar diukur dari LAYAR, bukan parent (anti-meluber). */
+    width: min(calc(100vw - 20px), calc(100svh - 180px));
+    aspect-ratio: 1 / 1;
     gap: 2px;
     padding: var(--s-2);
     border-width: 2px;
