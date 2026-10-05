@@ -44,7 +44,28 @@ export type TileType =
   | 'tax' // bayar pajak ke negara
   | 'jail' // "Ketahuan Korupsi" (masuk penjara)
   | 'free' // bebas parkir (netral)
+  | 'tol' // Jalan Tol: bayar + bisa teleport ke tol lain
   | 'goto-jail'; // petak "Kamu Terciduk KPK" -> kirim ke penjara
+
+/**
+ * Level properti (3 tingkat):
+ *   0 = Tanah Kosong (baru dibeli)
+ *   1 = Rumah Subsidi
+ *   2 = Rumah OKB (Orang Kaya Baru)
+ */
+export type PropertyLevel = 0 | 1 | 2;
+
+export const LEVEL_LABEL: Record<PropertyLevel, string> = {
+  0: 'Tanah Kosong',
+  1: 'Rumah Subsidi',
+  2: 'Rumah OKB',
+};
+
+export const LEVEL_ICON: Record<PropertyLevel, string> = {
+  0: '🟫',
+  1: '🏠',
+  2: '🏯',
+};
 
 export interface PropertyTile {
   index: number;
@@ -52,9 +73,10 @@ export interface PropertyTile {
   name: string;
   island: Island;
   price: number;
-  /** rent[0] = tanpa rumah, rent[1..4] = jumlah rumah, rent[5] = hotel */
-  rent: [number, number, number, number, number, number];
-  houseCost: number;
+  /** sewa per level: [tanah kosong, rumah subsidi, rumah OKB] */
+  rent: [number, number, number];
+  /** biaya upgrade ke level berikutnya: [->subsidi, ->OKB] */
+  upgradeCost: [number, number];
 }
 
 export interface SpecialTile {
@@ -93,7 +115,9 @@ export type CardEffect =
   // keluar penjara gratis (disimpan pemain)
   | { kind: 'get-out-of-jail' }
   // seret pemain lain yang dipilih acak ikut ke penjara
-  | { kind: 'drag-random-player-to-jail' };
+  | { kind: 'drag-random-player-to-jail' }
+  // negara menyita SATU tanah kosong (level 0) milik pemain (acak), tanpa ganti rugi
+  | { kind: 'seize-empty-land' };
 
 export interface Card {
   id: string;
@@ -124,8 +148,7 @@ export interface Player {
 export interface PropertyState {
   tileIndex: number;
   ownerId: string | null;
-  houses: number; // 0..4 rumah, 5 = hotel
-  mortgaged: boolean;
+  level: PropertyLevel; // 0 tanah kosong, 1 subsidi, 2 OKB
 }
 
 export type GamePhase = 'lobby' | 'playing' | 'finished';
@@ -147,9 +170,13 @@ export interface GameState {
   properties: PropertyState[];
   musibahQueue: string[]; // id kartu, diacak di awal
   takdirQueue: string[];
-  pot: number; // uang "bebas parkir" yang terkumpul (opsional)
+  pot: number; // kas negara yang terkumpul
   log: LogEntry[];
   winnerId: string | null;
+  /** pemain yang sedang HARUS memilih upgrade tanah (karena lewat START) */
+  pendingUpgradeFor: string | null;
+  /** pemain yang sedang DI petak Jalan Tol dan boleh teleport (opsional) */
+  pendingTolFor: string | null;
 }
 
 export interface LogEntry {
@@ -171,8 +198,13 @@ export interface ClientToServerEvents {
   'game:start': (cb: AckBasic) => void;
   'turn:roll': (cb: AckBasic) => void;
   'turn:buy': (cb: AckBasic) => void;
-  'turn:build': (payload: { tileIndex: number }, cb: AckBasic) => void;
   'turn:end': (cb: AckBasic) => void;
+  // upgrade tanah (dipicu saat lewat START): pilih 1 properti untuk naik level
+  'upgrade:choose': (payload: { tileIndex: number }, cb: AckBasic) => void;
+  'upgrade:skip': (cb: AckBasic) => void;
+  // Jalan Tol: teleport ke tol lain, atau lewati
+  'tol:teleport': (payload: { tileIndex: number }, cb: AckBasic) => void;
+  'tol:skip': (cb: AckBasic) => void;
   'jail:pay': (cb: AckBasic) => void;
   'jail:useCard': (cb: AckBasic) => void;
   'chat:send': (payload: { text: string }) => void;
@@ -220,5 +252,6 @@ export const AVATARS = AVATAR_OPTIONS.map((a) => a.emoji);
 // Starting constants
 export const STARTING_MONEY = 15_000_000; // Rp 15 juta
 export const SALARY = 2_000_000; // gaji saat lewat START
+export const TOL_FEE = 500_000; // bayar saat berhenti di Jalan Tol
 export const JAIL_INDEX_FINDER = (tiles: Tile[]): number =>
   tiles.findIndex((t) => t.type === 'jail');

@@ -1,194 +1,115 @@
-import type { Card, Tile } from './types.js';
+import type { Card, Island, PropertyTile, Tile } from './types.js';
 
 // ============================================================
-// Board layout - 28 petak (7 per sisi).
+// Board layout - 40 petak (perimeter grid 11x11, 10 per sisi).
 // Harga naik dari Papua (termurah) -> Jawa (termahal).
-// rent = [polos, 1 rumah, 2, 3, 4, hotel]
+// 4 Jalan Tol (seperti "stasiun"): bayar + bisa teleport ke tol lain.
 // ============================================================
+
+// Helper: bikin properti dengan sewa & biaya upgrade otomatis dari harga.
+// rent = [tanah kosong, rumah subsidi, rumah OKB]
+// upgradeCost = [-> subsidi, -> OKB]
+function prop(
+  index: number,
+  name: string,
+  island: Island,
+  price: number,
+): PropertyTile {
+  const base = Math.round(price * 0.08); // sewa tanah kosong ~8% harga
+  return {
+    index,
+    type: 'property',
+    name,
+    island,
+    price,
+    rent: [base, base * 5, base * 14],
+    upgradeCost: [Math.round(price * 0.6), Math.round(price * 1.1)],
+  };
+}
 
 export const BOARD: Tile[] = [
-  // --- Sisi bawah ---
+  // ===== SISI BAWAH (kiri->kanan dibalik saat render) index 0..10 =====
   { index: 0, type: 'start', name: 'START (Gajian!)' },
 
-  // PAPUA (termurah) - coklat
-  {
-    index: 1,
-    type: 'property',
-    name: 'Jayapura',
-    island: 'papua',
-    price: 600_000,
-    rent: [20_000, 100_000, 300_000, 900_000, 1_600_000, 2_500_000],
-    houseCost: 500_000,
-  },
+  // PAPUA (termurah)
+  prop(1, 'Jayapura', 'papua', 600_000),
   { index: 2, type: 'musibah', name: 'Kartu Musibah' },
-  {
-    index: 3,
-    type: 'property',
-    name: 'Raja Ampat',
-    island: 'papua',
-    price: 800_000,
-    rent: [40_000, 200_000, 600_000, 1_800_000, 3_200_000, 4_500_000],
-    houseCost: 500_000,
-  },
-  { index: 4, type: 'tax', name: 'Pungli Oknum', amount: 1_000_000 },
-  {
-    index: 5,
-    type: 'property',
-    name: 'Wamena',
-    island: 'papua',
-    price: 1_000_000,
-    rent: [60_000, 300_000, 900_000, 2_700_000, 4_000_000, 5_500_000],
-    houseCost: 500_000,
-  },
+  prop(3, 'Merauke', 'papua', 700_000),
+  prop(4, 'Raja Ampat', 'papua', 800_000),
+  { index: 5, type: 'tax', name: 'Pungli Oknum', amount: 1_000_000 },
+  prop(6, 'Wamena', 'papua', 1_000_000),
+  { index: 7, type: 'tol', name: 'Tol Trans-Papua' },
+  prop(8, 'Timika', 'papua', 1_100_000),
+  { index: 9, type: 'takdir', name: 'Kartu Takdir' },
+  prop(10, 'Sorong', 'papua', 1_200_000),
 
-  // --- Pojok: Penjara (hanya "mampir") ---
-  { index: 6, type: 'jail', name: 'Rutan KPK' },
+  // ===== POJOK: Rutan KPK (penjara) index 10 is corner above; next side =====
+  // KALIMANTAN
+  prop(11, 'Pontianak', 'kalimantan', 1_400_000),
+  { index: 12, type: 'musibah', name: 'Kartu Musibah' },
+  prop(13, 'Palangkaraya', 'kalimantan', 1_500_000),
+  prop(14, 'Banjarmasin', 'kalimantan', 1_600_000),
+  { index: 15, type: 'tol', name: 'Tol Balikpapan-Samarinda' },
+  prop(16, 'Balikpapan', 'kalimantan', 1_800_000),
+  { index: 17, type: 'takdir', name: 'Kartu Takdir' },
+  prop(18, 'Samarinda', 'kalimantan', 1_900_000),
+  { index: 19, type: 'tax', name: 'Jatah Preman', amount: 1_500_000 },
+  prop(20, 'IKN Nusantara', 'kalimantan', 2_200_000),
 
-  // KALIMANTAN - hijau
-  {
-    index: 7,
-    type: 'property',
-    name: 'Pontianak',
-    island: 'kalimantan',
-    price: 1_200_000,
-    rent: [80_000, 400_000, 1_000_000, 3_000_000, 4_500_000, 6_000_000],
-    houseCost: 1_000_000,
-  },
-  { index: 8, type: 'takdir', name: 'Kartu Takdir' },
-  {
-    index: 9,
-    type: 'property',
-    name: 'Balikpapan',
-    island: 'kalimantan',
-    price: 1_400_000,
-    rent: [100_000, 500_000, 1_500_000, 4_500_000, 6_250_000, 7_500_000],
-    houseCost: 1_000_000,
-  },
-  {
-    index: 10,
-    type: 'property',
-    name: 'Samarinda',
-    island: 'kalimantan',
-    price: 1_600_000,
-    rent: [120_000, 600_000, 1_800_000, 5_000_000, 7_000_000, 9_000_000],
-    houseCost: 1_000_000,
-  },
-
-  // --- Pojok: Bebas Parkir ---
-  { index: 11, type: 'free', name: 'Warkop (Ngopi Dulu)' },
-
-  // SULAWESI - biru
-  {
-    index: 12,
-    type: 'property',
-    name: 'Makassar',
-    island: 'sulawesi',
-    price: 1_800_000,
-    rent: [140_000, 700_000, 2_000_000, 5_500_000, 7_500_000, 9_500_000],
-    houseCost: 1_500_000,
-  },
-  { index: 13, type: 'musibah', name: 'Kartu Musibah' },
-  {
-    index: 14,
-    type: 'property',
-    name: 'Manado',
-    island: 'sulawesi',
-    price: 2_000_000,
-    rent: [160_000, 800_000, 2_200_000, 6_000_000, 8_000_000, 10_000_000],
-    houseCost: 1_500_000,
-  },
-  { index: 15, type: 'tax', name: 'Jatah Preman', amount: 1_500_000 },
-  {
-    index: 16,
-    type: 'property',
-    name: 'Palu',
-    island: 'sulawesi',
-    price: 2_200_000,
-    rent: [180_000, 900_000, 2_500_000, 7_000_000, 8_750_000, 11_000_000],
-    houseCost: 1_500_000,
-  },
-
-  // --- Pojok: Terciduk KPK -> ke penjara ---
-  { index: 17, type: 'goto-jail', name: 'OTT KPK!' },
-
-  // SUMATERA - oranye
-  {
-    index: 18,
-    type: 'property',
-    name: 'Palembang',
-    island: 'sumatera',
-    price: 2_400_000,
-    rent: [200_000, 1_000_000, 3_000_000, 7_500_000, 9_250_000, 12_000_000],
-    houseCost: 2_000_000,
-  },
-  { index: 19, type: 'takdir', name: 'Kartu Takdir' },
-  {
-    index: 20,
-    type: 'property',
-    name: 'Padang',
-    island: 'sumatera',
-    price: 2_600_000,
-    rent: [220_000, 1_100_000, 3_300_000, 8_000_000, 9_750_000, 13_000_000],
-    houseCost: 2_000_000,
-  },
-  {
-    index: 21,
-    type: 'property',
-    name: 'Medan',
-    island: 'sumatera',
-    price: 2_800_000,
-    rent: [240_000, 1_200_000, 3_600_000, 8_500_000, 10_250_000, 14_000_000],
-    houseCost: 2_000_000,
-  },
-
-  // --- Pojok: Kartu Musibah besar ---
+  // ===== POJOK (index 20 area) lalu SULAWESI =====
+  prop(21, 'Makassar', 'sulawesi', 2_300_000),
   { index: 22, type: 'musibah', name: 'Kartu Musibah' },
+  prop(23, 'Manado', 'sulawesi', 2_400_000),
+  prop(24, 'Palu', 'sulawesi', 2_500_000),
+  { index: 25, type: 'tol', name: 'Tol Makassar' },
+  prop(26, 'Kendari', 'sulawesi', 2_600_000),
+  { index: 27, type: 'takdir', name: 'Kartu Takdir' },
+  prop(28, 'Gorontalo', 'sulawesi', 2_700_000),
+  { index: 29, type: 'tax', name: 'Pajak Sultan', amount: 2_000_000 },
+  prop(30, 'Parepare', 'sulawesi', 2_800_000),
 
-  // JAWA (termahal) - merah. Pusat peradaban!
-  {
-    index: 23,
-    type: 'property',
-    name: 'Surabaya',
-    island: 'jawa',
-    price: 3_200_000,
-    rent: [280_000, 1_500_000, 4_500_000, 10_000_000, 12_000_000, 15_000_000],
-    houseCost: 2_500_000,
-  },
-  { index: 24, type: 'takdir', name: 'Kartu Takdir' },
-  {
-    index: 25,
-    type: 'property',
-    name: 'Bandung',
-    island: 'jawa',
-    price: 3_600_000,
-    rent: [320_000, 1_600_000, 4_800_000, 11_000_000, 13_000_000, 16_500_000],
-    houseCost: 2_500_000,
-  },
-  { index: 26, type: 'tax', name: 'Pajak Sultan', amount: 2_500_000 },
-  {
-    index: 27,
-    type: 'property',
-    name: 'Jakarta',
-    island: 'jawa',
-    price: 4_000_000,
-    rent: [500_000, 2_000_000, 6_000_000, 14_000_000, 17_000_000, 20_000_000],
-    houseCost: 2_500_000,
-  },
+  // ===== POJOK lalu SUMATERA + JAWA (termahal) =====
+  prop(31, 'Palembang', 'sumatera', 3_000_000),
+  { index: 32, type: 'musibah', name: 'Kartu Musibah' },
+  prop(33, 'Padang', 'sumatera', 3_200_000),
+  prop(34, 'Medan', 'sumatera', 3_400_000),
+  { index: 35, type: 'tol', name: 'Tol Trans-Jawa' },
+  prop(36, 'Semarang', 'jawa', 3_800_000),
+  { index: 37, type: 'takdir', name: 'Kartu Takdir' },
+  prop(38, 'Surabaya', 'jawa', 4_200_000),
+  prop(39, 'Bandung', 'jawa', 4_600_000),
 ];
 
-export const BOARD_SIZE = BOARD.length; // 28
+// Sisipkan 4 petak pojok secara logis lewat index khusus di render.
+// Catatan: untuk kesederhanaan, pojok (Rutan KPK, OTT KPK, Warkop) kita
+// tempatkan sebagai petak khusus menggantikan sebagian index di atas bila
+// perlu. Di sini kita jadikan 40 petak penuh dengan menyisipkan corner:
+// Kita override beberapa index agar ada 4 corner tetap.
+
+// --- Corner overrides: pastikan ada Rutan KPK, Warkop, OTT KPK, + START ---
+// START sudah di index 0 (pojok kanan-bawah).
+// Pojok lain pada grid 11x11 ada di index 10, 20, 30.
+BOARD[10] = { index: 10, type: 'jail', name: 'Rutan KPK' };
+BOARD[20] = { index: 20, type: 'free', name: 'Warkop (Ngopi Dulu)' };
+BOARD[30] = { index: 30, type: 'goto-jail', name: 'OTT KPK!' };
+
+export const BOARD_SIZE = BOARD.length; // 40
+
+/** Index semua petak Jalan Tol (untuk teleport). */
+export const TOL_INDICES = BOARD.filter((t) => t.type === 'tol').map(
+  (t) => t.index,
+);
 
 // ============================================================
-// Kartu Musibah (disaster) - bisa menyeret pemain lain,
-// tapi kadang justru menguntungkan pemain lain.
+// Kartu Musibah (disaster) - savage, "WNI tersiksa".
 // ============================================================
 
 export const MUSIBAH_CARDS: Card[] = [
   {
     id: 'm1',
     deck: 'musibah',
-    text: 'Proyek fiktif "jalan tol antah berantah" ketahuan BPK. Kembalikan Rp 2.000.000 ke negara.',
-    effect: { kind: 'money', amount: -2_000_000 },
+    text: 'Pemerintah mau bikin jalan tol. Tanah kosongmu disita, ganti rugi "nyusul" (tidak ada).',
+    effect: { kind: 'seize-empty-land' },
   },
   {
     id: 'm2',
@@ -199,14 +120,14 @@ export const MUSIBAH_CARDS: Card[] = [
   {
     id: 'm3',
     deck: 'musibah',
-    text: 'Kongkalikong tender ketahuan. Kamu nyanyi di persidangan & seret 1 kolega ikut masuk Rutan!',
+    text: 'Kongkalikong tender ketahuan. Kamu nyanyi & seret 1 kolega ikut masuk Rutan!',
     effect: { kind: 'drag-random-player-to-jail' },
   },
   {
     id: 'm4',
     deck: 'musibah',
-    text: 'Konten "settingan bagi-bagi duit" viral. Tiap pemain lain nyawer kamu Rp 500.000.',
-    effect: { kind: 'collect-each-player', amount: 500_000 },
+    text: 'Tanah kosongmu nganggur 5 tahun tanpa bangunan. Negara menyita lahan telantarmu.',
+    effect: { kind: 'seize-empty-land' },
   },
   {
     id: 'm5',
@@ -223,7 +144,7 @@ export const MUSIBAH_CARDS: Card[] = [
   {
     id: 'm7',
     deck: 'musibah',
-    text: 'Macet 4 jam gara-gara pejabat lewat (jalan ditutup). Mundur 3 langkah.',
+    text: 'Macet 4 jam gara-gara ada "orang penting" lewat (jalan ditutup). Mundur 3 langkah.',
     effect: { kind: 'move-by', steps: -3 },
   },
   {
@@ -253,25 +174,31 @@ export const MUSIBAH_CARDS: Card[] = [
   {
     id: 'm12',
     deck: 'musibah',
-    text: 'Flexing di medsos kebablasan, dipanggil pajak. Harta diperiksa, mundur 2 langkah.',
+    text: 'Antre BPJS dari subuh, nomor antrean 312, pulang tanpa dilayani. Mundur 2 langkah.',
     effect: { kind: 'move-by', steps: -2 },
   },
   {
     id: 'm13',
     deck: 'musibah',
-    text: 'Antre Pertalite 2 jam, eh pas giliran malah habis. Rugi waktu & bensin Rp 300.000.',
-    effect: { kind: 'money', amount: -300_000 },
+    text: 'Token listrik habis tengah malam, isi pulsa + "biaya admin" mencekik. Rugi Rp 350.000.',
+    effect: { kind: 'money', amount: -350_000 },
   },
   {
     id: 'm14',
     deck: 'musibah',
-    text: 'Jadi "tumbal" di kantor pas ada masalah. Semua lempar tanggung jawab ke kamu: bayar Rp 350.000 tiap pemain lain.',
+    text: 'Jadi "tumbal" di kantor pas ada masalah. Bayar Rp 350.000 tiap pemain lain.',
     effect: { kind: 'pay-each-player', amount: 350_000 },
+  },
+  {
+    id: 'm15',
+    deck: 'musibah',
+    text: 'Proyek fiktif ketahuan BPK. Kembalikan Rp 2.000.000 ke negara.',
+    effect: { kind: 'money', amount: -2_000_000 },
   },
 ];
 
 // ============================================================
-// Kartu Takdir (fate) - bisa baik atau apes.
+// Kartu Takdir (fate) - bisa hoki ala WNI, bisa apes.
 // ============================================================
 
 export const TAKDIR_CARDS: Card[] = [
@@ -284,7 +211,7 @@ export const TAKDIR_CARDS: Card[] = [
   {
     id: 't2',
     deck: 'takdir',
-    text: 'Menang giveaway sultan medsos (yang penting follow & tag 3 teman). Dapat Rp 1.500.000.',
+    text: 'Menang giveaway sultan medsos (follow & tag 3 teman). Dapat Rp 1.500.000.',
     effect: { kind: 'money', amount: 1_500_000 },
   },
   {
@@ -302,14 +229,14 @@ export const TAKDIR_CARDS: Card[] = [
   {
     id: 't5',
     deck: 'takdir',
-    text: 'THR cair! Tapi dipanggil pulang kampung. Maju ke START dan terima gajian.',
+    text: 'THR cair! Dipanggil pulang kampung. Maju ke START dan terima gajian.',
     effect: { kind: 'move-to', tileIndex: 0, collectIfPass: true },
   },
   {
     id: 't6',
     deck: 'takdir',
-    text: 'Dipanggil "rapat" ke Senayan Jakarta (modus studi banding). Melaju ke Jakarta.',
-    effect: { kind: 'move-to', tileIndex: 27, collectIfPass: true },
+    text: 'Dipanggil "studi banding" ke Bandung (modus liburan dinas). Melaju ke Bandung.',
+    effect: { kind: 'move-to', tileIndex: 39, collectIfPass: true },
   },
   {
     id: 't7',
@@ -320,7 +247,7 @@ export const TAKDIR_CARDS: Card[] = [
   {
     id: 't8',
     deck: 'takdir',
-    text: 'Jadi relawan paslon yang kalah. Janji "dana saksi" nggak dibayar. Rugi Rp 1.000.000.',
+    text: 'Jadi relawan paslon yang kalah. "Dana saksi" nggak dibayar. Rugi Rp 1.000.000.',
     effect: { kind: 'money', amount: -1_000_000 },
   },
   {
@@ -332,7 +259,7 @@ export const TAKDIR_CARDS: Card[] = [
   {
     id: 't10',
     deck: 'takdir',
-    text: 'Warisan tanah kakek "mendadak" dilirik proyek strategis nasional. Ganti rugi Rp 3.500.000.',
+    text: 'Warisan tanah kakek dilirik proyek strategis nasional. Ganti rugi Rp 3.500.000.',
     effect: { kind: 'money', amount: 3_500_000 },
   },
   {
@@ -356,8 +283,14 @@ export const TAKDIR_CARDS: Card[] = [
   {
     id: 't14',
     deck: 'takdir',
-    text: 'Subsidi tepat sasaran (ke kamu, entah kenapa). Tiap pemain lain iri & nransfer "iuran" Rp 300.000.',
+    text: 'Subsidi tepat sasaran (ke kamu, entah kenapa). Tiap pemain lain "iuran" Rp 300.000.',
     effect: { kind: 'collect-each-player', amount: 300_000 },
+  },
+  {
+    id: 't15',
+    deck: 'takdir',
+    text: 'Dapat proyek bagi-bagi sembako jelang pemilu. Terima Rp 1.600.000.',
+    effect: { kind: 'money', amount: 1_600_000 },
   },
 ];
 

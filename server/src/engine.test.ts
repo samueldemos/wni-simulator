@@ -3,14 +3,21 @@ import assert from 'node:assert';
 import {
   addPlayer,
   buyProperty,
+  chooseUpgrade,
   createInitialState,
   currentPlayer,
   endTurn,
   propertyAt,
   sendToJail,
   startGame,
+  tolTeleport,
 } from './engine.js';
-import { BOARD, STARTING_MONEY, type PropertyTile } from '@wni/shared';
+import {
+  BOARD,
+  STARTING_MONEY,
+  TOL_INDICES,
+  type PropertyTile,
+} from '@wni/shared';
 
 let passed = 0;
 function test(name: string, fn: () => void) {
@@ -105,6 +112,46 @@ test('endTurn advances to next player', () => {
   s.turnStage = 'resolved';
   endTurn(s, 'A');
   assert.equal(currentPlayer(s).id, 'B');
+});
+
+test('board is 40 tiles with 4 tol tiles', () => {
+  assert.equal(BOARD.length, 40);
+  assert.equal(TOL_INDICES.length, 4);
+});
+
+test('new property starts as Tanah Kosong (level 0)', () => {
+  const s = setup();
+  const andi = currentPlayer(s);
+  andi.position = 1; // Jayapura
+  buyProperty(s, 'A');
+  assert.equal(propertyAt(s, 1)!.level, 0);
+});
+
+test('chooseUpgrade raises level and deducts cost', () => {
+  const s = setup();
+  const andi = currentPlayer(s);
+  andi.position = 1;
+  buyProperty(s, 'A');
+  const tile = BOARD[1] as PropertyTile;
+  // beri jatah upgrade
+  s.pendingUpgradeFor = 'A';
+  const before = andi.money;
+  const err = chooseUpgrade(s, 'A', 1);
+  assert.equal(err, null);
+  assert.equal(propertyAt(s, 1)!.level, 1); // jadi Rumah Subsidi
+  assert.equal(andi.money, before - tile.upgradeCost[0]);
+  assert.equal(s.pendingUpgradeFor, null);
+});
+
+test('tolTeleport moves player to chosen tol tile', () => {
+  const s = setup();
+  const andi = currentPlayer(s);
+  s.pendingTolFor = 'A';
+  const target = TOL_INDICES[1];
+  const err = tolTeleport(s, 'A', target);
+  assert.equal(err, null);
+  assert.equal(andi.position, target);
+  assert.equal(s.pendingTolFor, null);
 });
 
 console.log(`\n${passed} tests passed.`);

@@ -12,14 +12,17 @@ import type {
 } from '@wni/shared';
 import {
   addPlayer,
-  buildHouse,
   buyProperty,
+  chooseUpgrade,
   createInitialState,
   currentPlayer,
   endTurn,
   payJail,
   rollDice,
+  skipUpgrade,
   startGame,
+  tolSkip,
+  tolTeleport,
   useJailCard,
 } from './engine.js';
 
@@ -121,9 +124,16 @@ io.on('connection', (socket) => {
   );
 
   socket.on('turn:buy', (cb) => withRoom(cb, (s) => buyProperty(s, socket.id)));
-  socket.on('turn:build', ({ tileIndex }, cb) =>
-    withRoom(cb, (s) => buildHouse(s, socket.id, tileIndex)),
+  socket.on('upgrade:choose', ({ tileIndex }, cb) =>
+    withRoom(cb, (s) => chooseUpgrade(s, socket.id, tileIndex)),
   );
+  socket.on('upgrade:skip', (cb) =>
+    withRoom(cb, (s) => skipUpgrade(s, socket.id)),
+  );
+  socket.on('tol:teleport', ({ tileIndex }, cb) =>
+    withRoom(cb, (s) => tolTeleport(s, socket.id, tileIndex)),
+  );
+  socket.on('tol:skip', (cb) => withRoom(cb, (s) => tolSkip(s, socket.id)));
   socket.on('turn:end', (cb) => withRoom(cb, (s) => endTurn(s, socket.id)));
   socket.on('jail:pay', (cb) => withRoom(cb, (s) => payJail(s, socket.id)));
   socket.on('jail:useCard', (cb) =>

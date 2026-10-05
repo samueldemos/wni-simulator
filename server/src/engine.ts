@@ -7,13 +7,17 @@ import {
   BOARD,
   BOARD_SIZE,
   CARD_BY_ID,
+  LEVEL_LABEL,
   MUSIBAH_CARDS,
   TAKDIR_CARDS,
   SALARY,
   STARTING_MONEY,
+  TOL_FEE,
+  TOL_INDICES,
   type Card,
   type GameState,
   type LogEntry,
+  type PropertyLevel,
   type PropertyState,
   type PropertyTile,
   type Player,
@@ -85,13 +89,15 @@ export function createInitialState(roomCode: string): GameState {
     lastDice: null,
     doublesCount: 0,
     properties: BOARD.filter((t): t is PropertyTile => t.type === 'property').map(
-      (t) => ({ tileIndex: t.index, ownerId: null, houses: 0, mortgaged: false }),
+      (t) => ({ tileIndex: t.index, ownerId: null, level: 0 as PropertyLevel }),
     ),
     musibahQueue: shuffle(MUSIBAH_CARDS.map((c) => c.id)),
     takdirQueue: shuffle(TAKDIR_CARDS.map((c) => c.id)),
     pot: 0,
     log: [makeLog('Room dibuat. Menunggu pemain bergabung...')],
     winnerId: null,
+    pendingUpgradeFor: null,
+    pendingTolFor: null,
   };
 }
 
@@ -154,7 +160,10 @@ function totalNetWorth(state: GameState, player: Player): number {
   for (const prop of state.properties) {
     if (prop.ownerId !== player.id) continue;
     const tile = BOARD[prop.tileIndex] as PropertyTile;
-    worth += tile.price + prop.houses * tile.houseCost;
+    let upgradeSpent = 0;
+    if (prop.level >= 1) upgradeSpent += tile.upgradeCost[0];
+    if (prop.level >= 2) upgradeSpent += tile.upgradeCost[1];
+    worth += tile.price + upgradeSpent;
   }
   return worth;
 }
@@ -196,8 +205,7 @@ function handleBankruptcy(
   for (const prop of state.properties) {
     if (prop.ownerId === player.id) {
       prop.ownerId = creditor ? creditor.id : null;
-      prop.houses = 0;
-      prop.mortgaged = false;
+      prop.level = 0;
     }
   }
   checkWinCondition(state);
@@ -315,6 +323,11 @@ function movePlayer(
   if (collectSalary && steps > 0 && next <= prev) {
     player.money += SALARY;
     log(state, `${player.name} lewat START, terima gaji Rp ${SALARY.toLocaleString('id-ID')}.`);
+    // bonus: boleh upgrade 1 tanah (jika punya properti yang bisa di-upgrade)
+    if (playerHasUpgradable(state, player.id)) {
+      state.pendingUpgradeFor = player.id;
+      log(state, `${player.name} dapat jatah upgrade 1 tanah (lewat START).`);
+    }
   }
   player.position = next;
   const tile = BOARD[next];
@@ -351,6 +364,19 @@ function resolveTile(
     case 'jail':
       // hanya mampir, tidak terjadi apa-apa
       return null;
+    case 'tol': {
+      transfer(state, player.id, null, TOL_FEE);
+      state.pot += TOL_FEE;
+      log(
+        state,
+        `${player.name} masuk ${tile.name}, bayar tol Rp ${TOL_FEE.toLocaleString('id-ID')} ke negara.`,
+      );
+      // boleh teleport ke tol lain (opsional), jika pemain belum bangkrut & ada tol lain
+      if (!player.bankrupt && TOL_INDICES.length > 1) {
+        state.pendingTolFor = player.id;
+      }
+      return null;
+    }
     case 'musibah':
       return drawCard(state, player, 'musibah');
     case 'takdir':
@@ -376,9 +402,9 @@ function resolveProperty(
     log(state, `${tile.name} adalah milikmu sendiri.`);
     return;
   }
-  // bayar sewa
+  // bayar sewa sesuai level properti
   const owner = state.players.find((p) => p.id === prop.ownerId)!;
-  const rent = prop.mortgaged ? 0 : tile.rent[prop.houses];
+  const rent = tile.rent[prop.level];
   if (rent <= 0) return;
 
   // ATURAN KORUPSI: jika pemilik sedang di penjara, sewa dibayar ke NEGARA.
@@ -387,7 +413,7 @@ function resolveProperty(
     state.pot += rent;
     log(
       state,
-      `${player.name} bayar sewa ${tile.name} Rp ${rent.toLocaleString('id-ID')} — tapi ${owner.name} sedang di penjara, jadi uang masuk ke NEGARA.`,
+      `${player.name} bayar sewa ${tile.name} (${LEVEL_LABEL[prop.level]}) Rp ${rent.toLocaleString('id-ID')}, tapi ${owner.name} lagi di Rutan, jadi uang masuk ke NEGARA.`,
     );
   } else {
     transfer(state, player.id, owner.id, rent);
@@ -422,37 +448,94 @@ export function buyProperty(
   return null;
 }
 
-/** Build a house/hotel; requires owning ALL properties in the island group. */
-export function buildHouse(
+// ---------------------------------------------------------------
+// Upgrade tanah (dipicu saat lewat START)
+// ---------------------------------------------------------------
+
+/** Biaya upgrade properti dari level sekarang ke level berikutnya. */
+export function upgradeCostOf(prop: PropertyState): number | null {
+  const tile = BOARD[prop.tileIndex] as PropertyTile;
+  if (prop.level === 0) return tile.upgradeCost[0];
+  if (prop.level === 1) return tile.upgradeCost[1];
+  return null; // sudah OKB (maksimal)
+}
+
+/** Apakah pemain punya minimal 1 properti yang masih bisa di-upgrade & terjangkau? */
+export function playerHasUpgradable(state: GameState, playerId: string): boolean {
+  const player = state.players.find((p) => p.id === playerId);
+  if (!player) return false;
+  return state.properties.some((prop) => {
+    if (prop.ownerId !== playerId) return false;
+    const cost = upgradeCostOf(prop);
+    return cost !== null && player.money >= cost;
+  });
+}
+
+/** Pemain memilih 1 properti untuk di-upgrade (saat jatah lewat START aktif). */
+export function chooseUpgrade(
   state: GameState,
   playerId: string,
   tileIndex: number,
 ): string | null {
-  const player = state.players.find((p) => p.id === playerId);
-  if (!player) return 'Pemain tidak ditemukan.';
-  if (currentPlayer(state).id !== playerId) return 'Bukan giliran kamu.';
-  const tile = BOARD[tileIndex];
-  if (tile.type !== 'property') return 'Petak ini bukan properti.';
-  const prop = propertyAt(state, tileIndex)!;
+  if (state.pendingUpgradeFor !== playerId)
+    return 'Belum ada jatah upgrade untukmu.';
+  const player = state.players.find((p) => p.id === playerId)!;
+  const prop = propertyAt(state, tileIndex);
+  if (!prop) return 'Petak bukan properti.';
   if (prop.ownerId !== playerId) return 'Kamu tidak memiliki properti ini.';
-  if (prop.houses >= 5) return 'Sudah hotel, tidak bisa dibangun lagi.';
+  const cost = upgradeCostOf(prop);
+  if (cost === null) return 'Properti ini sudah Rumah OKB (maksimal).';
+  if (player.money < cost) return 'Uangmu tidak cukup untuk upgrade.';
 
-  // harus menguasai seluruh pulau
-  const group = BOARD.filter(
-    (t): t is PropertyTile => t.type === 'property' && t.island === tile.island,
+  player.money -= cost;
+  prop.level = (prop.level + 1) as PropertyLevel;
+  const tile = BOARD[tileIndex] as PropertyTile;
+  log(
+    state,
+    `${player.name} upgrade ${tile.name} jadi ${LEVEL_LABEL[prop.level]} (Rp ${cost.toLocaleString('id-ID')}).`,
   );
-  const ownsAll = group.every(
-    (t) => propertyAt(state, t.index)!.ownerId === playerId,
-  );
-  if (!ownsAll)
-    return `Kamu harus menguasai semua kota di ${tile.island} dulu.`;
-
-  if (player.money < tile.houseCost) return 'Uangmu tidak cukup membangun.';
-  player.money -= tile.houseCost;
-  prop.houses += 1;
-  const what = prop.houses === 5 ? 'hotel' : `rumah ke-${prop.houses}`;
-  log(state, `${player.name} membangun ${what} di ${tile.name}.`);
+  state.pendingUpgradeFor = null;
   return null;
+}
+
+/** Pemain melewatkan jatah upgrade. */
+export function skipUpgrade(state: GameState, playerId: string): string | null {
+  if (state.pendingUpgradeFor !== playerId) return 'Tidak ada jatah upgrade.';
+  state.pendingUpgradeFor = null;
+  log(state, `${nameOf(state, playerId)} melewatkan jatah upgrade.`);
+  return null;
+}
+
+// ---------------------------------------------------------------
+// Jalan Tol: teleport
+// ---------------------------------------------------------------
+
+export function tolTeleport(
+  state: GameState,
+  playerId: string,
+  tileIndex: number,
+): string | null {
+  if (state.pendingTolFor !== playerId)
+    return 'Kamu tidak sedang di Jalan Tol.';
+  if (!TOL_INDICES.includes(tileIndex)) return 'Tujuan bukan Jalan Tol.';
+  const player = state.players.find((p) => p.id === playerId)!;
+  player.position = tileIndex;
+  state.pendingTolFor = null;
+  log(
+    state,
+    `${player.name} lewat tol tembus ke ${BOARD[tileIndex].name} (gratis).`,
+  );
+  return null;
+}
+
+export function tolSkip(state: GameState, playerId: string): string | null {
+  if (state.pendingTolFor !== playerId) return 'Tidak ada opsi tol.';
+  state.pendingTolFor = null;
+  return null;
+}
+
+function nameOf(state: GameState, id: string): string {
+  return state.players.find((p) => p.id === id)?.name ?? 'Pemain';
 }
 
 // ---------------------------------------------------------------
@@ -539,6 +622,24 @@ function applyCard(state: GameState, player: Player, card: Card): void {
       state.turnStage = 'resolved';
       break;
     }
+    case 'seize-empty-land': {
+      // negara menyita SATU tanah kosong (level 0) milik pemain, dipilih acak
+      const empties = state.properties.filter(
+        (p) => p.ownerId === player.id && p.level === 0,
+      );
+      if (empties.length === 0) {
+        log(state, `${player.name} tidak punya tanah kosong untuk disita. Selamat, lolos!`);
+      } else {
+        const victim = empties[Math.floor(Math.random() * empties.length)];
+        victim.ownerId = null;
+        const tile = BOARD[victim.tileIndex] as PropertyTile;
+        log(
+          state,
+          `Negara menyita ${tile.name} (tanah kosong) milik ${player.name}. Tanpa ganti rugi. 😭`,
+        );
+      }
+      break;
+    }
   }
 }
 
@@ -577,6 +678,10 @@ export function endTurn(state: GameState, playerId: string): string | null {
   const player = currentPlayer(state);
   if (player.id !== playerId) return 'Bukan giliran kamu.';
   if (state.phase !== 'playing') return 'Permainan belum berjalan.';
+  if (state.pendingUpgradeFor === playerId)
+    return 'Pilih tanah untuk di-upgrade dulu, atau lewati.';
+  if (state.pendingTolFor === playerId)
+    return 'Pilih tujuan Jalan Tol dulu, atau lewati.';
 
   // dadu kembar & tidak di penjara & belum resolved -> jalan lagi
   const rolledDouble =
