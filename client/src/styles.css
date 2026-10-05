@@ -1319,18 +1319,27 @@ input:focus {
 /* ============================================================
    Responsive
    ============================================================ */
-/* Tablet & bawah: layout 1 kolom */
-@media (max-width: 1000px) {
+/* Tablet & bawah: layout 1 kolom (naikkan ke 1180px agar tablet landscape
+   ~1024px tidak lagi memaksa 2 kolom yang bikin sidebar menabrak papan) */
+@media (max-width: 1180px) {
   .game {
     grid-template-columns: 1fr;
     gap: var(--s-4);
     padding: var(--s-4);
+    justify-items: center;
   }
   .game-main {
     position: static;
-  }
-  .board {
     width: 100%;
+  }
+  /* papan tetap kotak, dibatasi agar tidak kebesaran di layar lebar 1 kolom */
+  .board {
+    width: min(72vh, 100%);
+    max-width: 640px;
+  }
+  .sidebar {
+    width: 100%;
+    max-width: 640px;
   }
   .landing-hero {
     grid-template-columns: 1fr;
@@ -1725,7 +1734,7 @@ input:focus {
   font-size: 14px;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1180px) {
   .fab {
     display: flex;
     gap: var(--s-2);
