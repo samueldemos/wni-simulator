@@ -202,9 +202,8 @@ export interface ClientToServerEvents {
   // upgrade tanah (dipicu saat lewat START): pilih 1 properti untuk naik level
   'upgrade:choose': (payload: { tileIndex: number }, cb: AckBasic) => void;
   'upgrade:skip': (cb: AckBasic) => void;
-  // Jalan Tol: teleport ke tol lain, atau lewati
+  // Jalan Tol: WAJIB tembus ke tol lain (bayar lagi)
   'tol:teleport': (payload: { tileIndex: number }, cb: AckBasic) => void;
-  'tol:skip': (cb: AckBasic) => void;
   'jail:pay': (cb: AckBasic) => void;
   'jail:useCard': (cb: AckBasic) => void;
   'chat:send': (payload: { text: string }) => void;

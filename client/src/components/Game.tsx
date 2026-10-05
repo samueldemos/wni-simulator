@@ -73,7 +73,6 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
   const skipUpgrade = () => socket.emit('upgrade:skip', () => {});
   const tolTeleport = (tileIndex: number) =>
     socket.emit('tol:teleport', { tileIndex }, () => {});
-  const tolSkip = () => socket.emit('tol:skip', () => {});
 
   const sendChat = () => {
     const t = chatInput.trim();
@@ -315,13 +314,15 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
         </div>
       )}
 
-      {/* Dialog: Jalan Tol teleport */}
+      {/* Dialog: Jalan Tol teleport (WAJIB pindah, bayar lagi 500K) */}
       {needTol && me && (
         <div className="choice-overlay">
           <div className="choice-box">
-            <h3>🛣️ Jalan Tol</h3>
+            <h3>🛣️ Pintu Tol</h3>
             <p className="hint">
-              Kamu sudah bayar tol. Mau tembus ke Jalan Tol mana? (gratis)
+              Masuk tol WAJIB tembus ke Pintu Tol lain. Pilih tujuan, kena{' '}
+              <b>biaya tol lagi {rupiah(500_000)}</b>. Nggak ada jalan putar
+              balik. 😩
             </p>
             <div className="choice-list">
               {TOL_INDICES.filter((i) => i !== me.position).map((i) => (
@@ -331,13 +332,11 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
                   onClick={() => tolTeleport(i)}
                 >
                   <span className="choice-item-name">{BOARD[i].name}</span>
-                  <span className="choice-item-sub">🛣️ pindah ke sini</span>
+                  <span className="choice-item-sub">🛣️ tembus ke sini</span>
+                  <span className="choice-item-cost">{rupiah(500_000)}</span>
                 </button>
               ))}
             </div>
-            <button className="btn" onClick={tolSkip}>
-              Nggak usah, lanjut
-            </button>
           </div>
         </div>
       )}

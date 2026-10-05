@@ -146,12 +146,24 @@ test('chooseUpgrade raises level and deducts cost', () => {
 test('tolTeleport moves player to chosen tol tile', () => {
   const s = setup();
   const andi = currentPlayer(s);
+  andi.position = TOL_INDICES[0]; // sedang di salah satu tol
   s.pendingTolFor = 'A';
+  const before = andi.money;
   const target = TOL_INDICES[1];
   const err = tolTeleport(s, 'A', target);
   assert.equal(err, null);
   assert.equal(andi.position, target);
+  assert.equal(andi.money, before - 500_000); // wajib bayar tol lagi
   assert.equal(s.pendingTolFor, null);
+});
+
+test('tolTeleport rejects same tol tile (wajib pindah berbeda)', () => {
+  const s = setup();
+  const andi = currentPlayer(s);
+  andi.position = TOL_INDICES[0];
+  s.pendingTolFor = 'A';
+  const err = tolTeleport(s, 'A', TOL_INDICES[0]);
+  assert.ok(err, 'tidak boleh pindah ke tol yang sama');
 });
 
 console.log(`\n${passed} tests passed.`);

@@ -21,7 +21,6 @@ import {
   rollDice,
   skipUpgrade,
   startGame,
-  tolSkip,
   tolTeleport,
   useJailCard,
 } from './engine.js';
@@ -133,7 +132,6 @@ io.on('connection', (socket) => {
   socket.on('tol:teleport', ({ tileIndex }, cb) =>
     withRoom(cb, (s) => tolTeleport(s, socket.id, tileIndex)),
   );
-  socket.on('tol:skip', (cb) => withRoom(cb, (s) => tolSkip(s, socket.id)));
   socket.on('turn:end', (cb) => withRoom(cb, (s) => endTurn(s, socket.id)));
   socket.on('jail:pay', (cb) => withRoom(cb, (s) => payJail(s, socket.id)));
   socket.on('jail:useCard', (cb) =>

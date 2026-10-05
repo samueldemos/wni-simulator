@@ -518,19 +518,22 @@ export function tolTeleport(
   if (state.pendingTolFor !== playerId)
     return 'Kamu tidak sedang di Jalan Tol.';
   if (!TOL_INDICES.includes(tileIndex)) return 'Tujuan bukan Jalan Tol.';
+  if (tileIndex === state.players.find((p) => p.id === playerId)!.position)
+    return 'Pilih Pintu Tol yang berbeda.';
   const player = state.players.find((p) => p.id === playerId)!;
-  player.position = tileIndex;
+  // WAJIB bayar tol lagi saat tembus (tol itu bikin tersiksa)
+  transfer(state, player.id, null, TOL_FEE);
   state.pendingTolFor = null;
+  if (player.bankrupt) {
+    log(state, `${player.name} tak sanggup bayar tol tembus dan bangkrut di Pintu Tol. 💀`);
+    return null;
+  }
+  state.pot += TOL_FEE;
+  player.position = tileIndex;
   log(
     state,
-    `${player.name} lewat tol tembus ke ${BOARD[tileIndex].name} (gratis).`,
+    `${player.name} tembus tol ke ${BOARD[tileIndex].name}, bayar lagi Rp ${TOL_FEE.toLocaleString('id-ID')} ke negara.`,
   );
-  return null;
-}
-
-export function tolSkip(state: GameState, playerId: string): string | null {
-  if (state.pendingTolFor !== playerId) return 'Tidak ada opsi tol.';
-  state.pendingTolFor = null;
   return null;
 }
 
