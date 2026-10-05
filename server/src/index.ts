@@ -25,7 +25,8 @@ import {
   useJailCard,
 } from './engine.js';
 
-const PORT = Number(process.env.PORT ?? 3001);
+// Railway/host memberi PORT via env; default 8080 (port umum container).
+const PORT = Number(process.env.PORT ?? 8080);
 // CLIENT_ORIGIN boleh berisi beberapa URL dipisah koma, atau "*" untuk semua.
 const RAW_ORIGIN = process.env.CLIENT_ORIGIN ?? '*';
 const CORS_ORIGIN: string | string[] =
