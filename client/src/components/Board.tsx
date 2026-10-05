@@ -59,6 +59,27 @@ function tileLabel(tile: Tile): string {
   }
 }
 
+function tileIcon(tile: Tile): string {
+  switch (tile.type) {
+    case 'start':
+      return '🏁';
+    case 'musibah':
+      return '⚠️';
+    case 'takdir':
+      return '✨';
+    case 'tax':
+      return '💸';
+    case 'jail':
+      return '🔒';
+    case 'goto-jail':
+      return '🚔';
+    case 'free':
+      return '🅿️';
+    case 'property':
+      return '🏙️';
+  }
+}
+
 export function Board({ state }: Props) {
   return (
     <div className="board">
@@ -92,6 +113,7 @@ export function Board({ state }: Props) {
                 style={{ background: islandColor }}
               />
             )}
+            {!isProperty && <div className="tile-icon">{tileIcon(tile)}</div>}
             <div className="tile-name">{tileLabel(tile)}</div>
             {isProperty && (
               <div className="tile-price">
