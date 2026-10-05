@@ -17,6 +17,7 @@ import { Board } from './Board';
 import { Dice } from './Dice';
 import { AnimatedMoney } from './AnimatedMoney';
 import { Avatar } from './Avatar';
+import { TileInfo } from './TileInfo';
 import { sfx } from '../sound';
 
 interface Props {
@@ -117,8 +118,18 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
     return { island, owned, total: all.length };
   }).filter((g) => g.owned.length > 0);
 
+  // Aksi utama untuk floating bar HP (satu tombol paling relevan).
+  const canRoll = myTurn && state.turnStage === 'awaiting-roll' && !needTol;
+  const canEnd =
+    myTurn &&
+    state.turnStage !== 'awaiting-roll' &&
+    !needUpgrade &&
+    !needTol;
+
   return (
     <div className="game">
+      <TileInfo state={state} />
+
       <div className="game-main">
         <Board state={state} />
       </div>
@@ -398,6 +409,56 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
               ))}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Floating action bar — HANYA tampil di HP (lihat CSS) */}
+      {state.phase === 'playing' && me && (
+        <div className="fab">
+          {!myTurn && (
+            <div className="fab-wait">
+              <Avatar avatar={current?.avatar ?? ''} color={current?.color ?? '#000'} />
+              Giliran {current?.name}...
+            </div>
+          )}
+          {myTurn && (
+            <>
+              {me.inJail && state.turnStage === 'awaiting-roll' && (
+                <button
+                  className="btn"
+                  disabled={me.money < 1_000_000}
+                  onClick={payJail}
+                >
+                  Jaminan {rupiah(1_000_000)}
+                </button>
+              )}
+              {canRoll && (
+                <button
+                  className="btn primary"
+                  disabled={sentRoll || diceRolling}
+                  onClick={roll}
+                >
+                  🎲 {sentRoll || diceRolling ? 'Melempar...' : 'Lempar Dadu'}
+                </button>
+              )}
+              {canBuy && myTile?.type === 'property' && (
+                <button className="btn primary" onClick={buy}>
+                  Caplok ({rupiah((myTile as PropertyTile).price)})
+                </button>
+              )}
+              {needUpgrade && (
+                <div className="fab-wait">🏗️ Pilih tanah di jendela upgrade</div>
+              )}
+              {needTol && (
+                <div className="fab-wait">🛣️ Pilih tujuan tol di jendela</div>
+              )}
+              {canEnd && !canBuy && (
+                <button className="btn" onClick={end}>
+                  Akhiri Giliran
+                </button>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>

@@ -1639,3 +1639,117 @@ input:focus {
   color: var(--muted-ink);
   white-space: nowrap;
 }
+
+/* ============================================================
+   Info petak saat mendarat (banner)
+   ============================================================ */
+.tileinfo {
+  position: fixed;
+  left: 50%;
+  bottom: var(--s-5);
+  transform: translateX(-50%);
+  z-index: 58;
+  display: flex;
+  width: min(92vw, 380px);
+  background: var(--white);
+  border: var(--border-ink-3);
+  border-radius: var(--r-md);
+  box-shadow: var(--hard);
+  overflow: hidden;
+  cursor: pointer;
+  animation: tileinfo-in 0.3s var(--ease);
+}
+@keyframes tileinfo-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+}
+.tileinfo-stripe {
+  width: 10px;
+  flex: none;
+  border-right: var(--border-ink);
+}
+.tileinfo-body {
+  padding: var(--s-3) var(--s-4);
+  flex: 1;
+  min-width: 0;
+}
+.tileinfo-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+  margin-bottom: var(--s-1);
+}
+.tileinfo-name {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 16px;
+  color: var(--ink);
+}
+.tileinfo-island {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--muted-ink);
+}
+.tileinfo-rows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-4);
+  font-size: 13px;
+  color: var(--muted-ink);
+  font-weight: 600;
+}
+.tileinfo-rows b {
+  color: var(--ink);
+}
+.tileinfo-rent {
+  color: var(--red-deep);
+  font-weight: 800;
+}
+
+/* ============================================================
+   Floating action bar (HANYA HP)
+   ============================================================ */
+.fab {
+  display: none;
+}
+.fab-wait {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  font-weight: 700;
+  color: var(--muted-ink);
+  font-size: 14px;
+}
+
+@media (max-width: 1000px) {
+  .fab {
+    display: flex;
+    gap: var(--s-2);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 59;
+    padding: var(--s-3) var(--s-4);
+    padding-bottom: calc(var(--s-3) + env(safe-area-inset-bottom, 0px));
+    background: var(--white);
+    border-top: var(--border-ink-3);
+    box-shadow: 0 -4px 0 rgba(0, 0, 0, 0.08);
+  }
+  .fab .btn {
+    margin-top: 0;
+    flex: 1;
+  }
+  /* beri ruang di bawah agar konten tak ketutup FAB */
+  .game {
+    padding-bottom: 84px;
+  }
+  /* info petak muncul di atas FAB */
+  .tileinfo {
+    bottom: 84px;
+  }
+}
