@@ -2,6 +2,8 @@ import {
   BOARD,
   ISLAND_COLOR,
   ISLAND_LABEL,
+  LEVEL_ICON,
+  LEVEL_LABEL,
   type GameState,
   type PropertyTile,
   type Tile,
@@ -12,18 +14,18 @@ interface Props {
   state: GameState;
 }
 
-const SIDE = 8; // 8x8 grid -> perimeter = 28 cells.
+const SIDE = 11; // 11x11 grid -> perimeter = 40 cells.
 
 function gridPos(index: number): { row: number; col: number } {
   const n = index;
-  if (n <= 7) {
-    return { row: SIDE, col: SIDE - n }; // bottom: right -> left
-  } else if (n <= 14) {
-    return { row: SIDE - (n - 7), col: 1 }; // left: bottom -> top
-  } else if (n <= 21) {
-    return { row: 1, col: 1 + (n - 14) }; // top: left -> right
+  if (n <= 10) {
+    return { row: SIDE, col: SIDE - n }; // bawah: kanan -> kiri (col 11..1)
+  } else if (n <= 20) {
+    return { row: SIDE - (n - 10), col: 1 }; // kiri: bawah -> atas (row 11..1)
+  } else if (n <= 30) {
+    return { row: 1, col: 1 + (n - 20) }; // atas: kiri -> kanan (col 1..11)
   } else {
-    return { row: 1 + (n - 21), col: SIDE }; // right: top -> bottom
+    return { row: 1 + (n - 30), col: SIDE }; // kanan: atas -> bawah (row 1..11)
   }
 }
 
@@ -42,7 +44,9 @@ function tileLabel(tile: Tile): string {
     case 'goto-jail':
       return 'KPK!';
     case 'free':
-      return 'PARKIR';
+      return 'WARKOP';
+    case 'tol':
+      return tile.name;
     case 'property':
       return tile.name;
   }
@@ -63,7 +67,9 @@ function tileIcon(tile: Tile): string {
     case 'goto-jail':
       return '🚔';
     case 'free':
-      return '🅿️';
+      return '☕';
+    case 'tol':
+      return '🛣️';
     case 'property':
       return '🏙️';
   }
@@ -117,9 +123,9 @@ export function Board({ state }: Props) {
                 {(tile as PropertyTile).price.toLocaleString('id-ID')}
               </div>
             )}
-            {prop && prop.houses > 0 && (
-              <div className="tile-houses">
-                {prop.houses === 5 ? '🏨' : '🏠'.repeat(prop.houses)}
+            {prop && prop.ownerId && prop.level > 0 && (
+              <div className="tile-houses" title={LEVEL_LABEL[prop.level]}>
+                {LEVEL_ICON[prop.level]}
               </div>
             )}
             {owner && (

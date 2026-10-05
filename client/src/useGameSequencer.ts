@@ -153,8 +153,10 @@ function stateKey(s: GameState): string {
     s.turnStage,
     JSON.stringify(s.lastDice),
     s.pot,
+    s.pendingUpgradeFor ?? '-',
+    s.pendingTolFor ?? '-',
     s.players.map((p) => `${p.id}:${p.position}:${p.money}:${p.inJail ? 1 : 0}:${p.bankrupt ? 1 : 0}`).join('|'),
-    s.properties.map((p) => `${p.tileIndex}:${p.ownerId ?? '-'}:${p.houses}`).join('|'),
+    s.properties.map((p) => `${p.tileIndex}:${p.ownerId ?? '-'}:${p.level}`).join('|'),
   ].join('#');
 }
 

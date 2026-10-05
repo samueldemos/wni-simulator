@@ -1323,3 +1323,83 @@ input:focus {
     max-width: none;
   }
 }
+
+/* ============================================================
+   Dialog pilihan (upgrade tanah / Jalan Tol)
+   ============================================================ */
+.choice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s-5);
+  background: rgba(18, 18, 18, 0.6);
+  animation: fade-in 0.2s var(--ease);
+}
+.choice-box {
+  width: 100%;
+  max-width: 420px;
+  background: var(--white);
+  border: var(--border-ink-3);
+  border-radius: var(--r-md);
+  padding: var(--s-6);
+  box-shadow: var(--hard-lg);
+  animation: pop-in 0.3s var(--ease);
+}
+.choice-box h3 {
+  margin: 0 0 var(--s-2);
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 18px;
+  color: var(--ink);
+}
+.choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin: var(--s-4) 0;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.choice-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: 'name cost' 'sub cost';
+  gap: 0 var(--s-3);
+  align-items: center;
+  text-align: left;
+  padding: var(--s-3) var(--s-4);
+  background: var(--paper);
+  border: var(--border-ink);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font: inherit;
+  box-shadow: var(--hard-sm);
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+}
+.choice-item:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--hard);
+}
+.choice-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.choice-item-name {
+  grid-area: name;
+  font-weight: 800;
+  color: var(--ink);
+}
+.choice-item-sub {
+  grid-area: sub;
+  font-size: 12px;
+  color: var(--muted-ink);
+  font-weight: 600;
+}
+.choice-item-cost {
+  grid-area: cost;
+  font-family: 'Archivo Black', sans-serif;
+  font-size: 14px;
+  color: var(--red-deep);
+}

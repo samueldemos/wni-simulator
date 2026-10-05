@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { BOARD, type GameState, type PropertyTile } from '@wni/shared';
+import {
+  BOARD,
+  LEVEL_LABEL,
+  TOL_INDICES,
+  type GameState,
+  type PropertyLevel,
+  type PropertyTile,
+} from '@wni/shared';
 import type { GameSocket } from '../socket';
 import type { ChatMessage } from '../App';
 import { Board } from './Board';
@@ -61,8 +68,12 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
   const end = () => socket.emit('turn:end', () => {});
   const payJail = () => socket.emit('jail:pay', () => {});
   const useCard = () => socket.emit('jail:useCard', () => {});
-  const build = (tileIndex: number) =>
-    socket.emit('turn:build', { tileIndex }, () => {});
+  const chooseUpgrade = (tileIndex: number) =>
+    socket.emit('upgrade:choose', { tileIndex }, () => {});
+  const skipUpgrade = () => socket.emit('upgrade:skip', () => {});
+  const tolTeleport = (tileIndex: number) =>
+    socket.emit('tol:teleport', { tileIndex }, () => {});
+  const tolSkip = () => socket.emit('tol:skip', () => {});
 
   const sendChat = () => {
     const t = chatInput.trim();
@@ -71,19 +82,24 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
     setChatInput('');
   };
 
-  const myBuildable = state.properties.filter((p) => {
-    if (p.ownerId !== playerId) return false;
-    const tile = BOARD[p.tileIndex] as PropertyTile;
-    const group = BOARD.filter(
-      (t): t is PropertyTile => t.type === 'property' && t.island === tile.island,
-    );
-    const ownsAll = group.every(
-      (t) =>
-        state.properties.find((x) => x.tileIndex === t.index)?.ownerId ===
-        playerId,
-    );
-    return ownsAll && p.houses < 5;
-  });
+  // biaya upgrade ke level berikutnya (null jika sudah OKB)
+  const nextUpgradeCost = (
+    tileIndex: number,
+    level: PropertyLevel,
+  ): number | null => {
+    const tile = BOARD[tileIndex] as PropertyTile;
+    if (level === 0) return tile.upgradeCost[0];
+    if (level === 1) return tile.upgradeCost[1];
+    return null;
+  };
+
+  // properti milikku yang bisa di-upgrade (dipakai saat jatah lewat START aktif)
+  const myUpgradable = state.properties.filter(
+    (p) => p.ownerId === playerId && p.level < 2,
+  );
+
+  const needUpgrade = state.pendingUpgradeFor === playerId;
+  const needTol = state.pendingTolFor === playerId;
 
   return (
     <div className="game">
@@ -182,36 +198,32 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
 
               {canBuy && myTile?.type === 'property' && (
                 <button className="btn primary" onClick={buy}>
-                  Beli {myTile.name} ({rupiah((myTile as PropertyTile).price)})
+                  Caplok {myTile.name} ({rupiah((myTile as PropertyTile).price)})
                 </button>
+              )}
+
+              {needUpgrade && (
+                <div className="jail-note">
+                  🏗️ Kamu lewat START, pilih 1 tanah untuk di-upgrade (lihat
+                  jendela).
+                </div>
+              )}
+              {needTol && (
+                <div className="jail-note">
+                  🛣️ Kamu di Jalan Tol, pilih mau tembus ke tol mana (lihat
+                  jendela).
+                </div>
               )}
 
               {state.turnStage !== 'awaiting-roll' && (
-                <button className="btn" onClick={end}>
+                <button
+                  className="btn"
+                  disabled={needUpgrade || needTol}
+                  onClick={end}
+                >
                   Akhiri Giliran
                 </button>
               )}
-
-              {myBuildable.length > 0 &&
-                state.turnStage !== 'awaiting-roll' && (
-                  <div className="build-section">
-                    <div className="build-title">Bangun properti:</div>
-                    {myBuildable.map((p) => {
-                      const tile = BOARD[p.tileIndex] as PropertyTile;
-                      return (
-                        <button
-                          key={p.tileIndex}
-                          className="btn small"
-                          disabled={!me || me.money < tile.houseCost}
-                          onClick={() => build(p.tileIndex)}
-                        >
-                          {tile.name} +{p.houses === 4 ? '🏨' : '🏠'} (
-                          {rupiah(tile.houseCost)})
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
             </div>
           )}
 
@@ -259,6 +271,76 @@ export function Game({ socket, state, playerId, chat, diceRolling }: Props) {
           </div>
         </section>
       </aside>
+
+      {/* Dialog: pilih tanah untuk di-upgrade (jatah lewat START) */}
+      {needUpgrade && me && (
+        <div className="choice-overlay">
+          <div className="choice-box">
+            <h3>🏗️ Jatah Upgrade (lewat START)</h3>
+            <p className="hint">
+              Pilih 1 propertimu untuk naik level. Tanah Kosong → Rumah Subsidi
+              → Rumah OKB.
+            </p>
+            <div className="choice-list">
+              {myUpgradable.map((p) => {
+                const tile = BOARD[p.tileIndex] as PropertyTile;
+                const cost = nextUpgradeCost(p.tileIndex, p.level);
+                const nextLvl = (p.level + 1) as PropertyLevel;
+                const afford = cost !== null && me.money >= cost;
+                return (
+                  <button
+                    key={p.tileIndex}
+                    className="choice-item"
+                    disabled={!afford}
+                    onClick={() => chooseUpgrade(p.tileIndex)}
+                  >
+                    <span className="choice-item-name">{tile.name}</span>
+                    <span className="choice-item-sub">
+                      {LEVEL_LABEL[p.level]} → {LEVEL_LABEL[nextLvl]}
+                    </span>
+                    <span className="choice-item-cost">
+                      {cost !== null ? rupiah(cost) : 'Maks'}
+                    </span>
+                  </button>
+                );
+              })}
+              {myUpgradable.length === 0 && (
+                <p className="hint">Tidak ada properti yang bisa di-upgrade.</p>
+              )}
+            </div>
+            <button className="btn" onClick={skipUpgrade}>
+              Lewati
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog: Jalan Tol teleport */}
+      {needTol && me && (
+        <div className="choice-overlay">
+          <div className="choice-box">
+            <h3>🛣️ Jalan Tol</h3>
+            <p className="hint">
+              Kamu sudah bayar tol. Mau tembus ke Jalan Tol mana? (gratis)
+            </p>
+            <div className="choice-list">
+              {TOL_INDICES.filter((i) => i !== me.position).map((i) => (
+                <button
+                  key={i}
+                  className="choice-item"
+                  onClick={() => tolTeleport(i)}
+                >
+                  <span className="choice-item-name">{BOARD[i].name}</span>
+                  <span className="choice-item-sub">🛣️ pindah ke sini</span>
+                </button>
+              ))}
+            </div>
+            <button className="btn" onClick={tolSkip}>
+              Nggak usah, lanjut
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
