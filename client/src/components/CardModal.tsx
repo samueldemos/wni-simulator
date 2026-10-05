@@ -21,9 +21,30 @@ export function CardModal({ drawn, onClose }: Props) {
   if (!drawn) return null;
 
   const isMusibah = drawn.deck === 'musibah';
+  // emoji yang "jalan" di background sesuai jenis kartu
+  const driftEmojis = isMusibah
+    ? ['⚠️', '🚔', '💸', '🔥', '📉', '😱', '⛓️']
+    : ['✨', '💰', '🍀', '🎉', '📈', '😎', '🤑'];
 
   return (
-    <div className="card-overlay" onClick={onClose}>
+    <div className={`card-overlay ${drawn.deck}`} onClick={onClose}>
+      {/* Background beranimasi: emoji melintas pelan */}
+      <div className="card-bg" aria-hidden="true">
+        {Array.from({ length: 14 }).map((_, i) => (
+          <span
+            key={i}
+            className="card-bg-item"
+            style={{
+              left: `${(i * 7.5) % 100}%`,
+              animationDelay: `${(i % 7) * 0.6}s`,
+              animationDuration: `${6 + (i % 5)}s`,
+              fontSize: `${22 + (i % 4) * 10}px`,
+            }}
+          >
+            {driftEmojis[i % driftEmojis.length]}
+          </span>
+        ))}
+      </div>
       <div
         className={`flip-card ${flipped ? 'flipped' : ''} ${drawn.deck}`}
         onClick={(e) => e.stopPropagation()}
