@@ -63,20 +63,20 @@ npm run test -w server
 
 ## Deploy agar bisa diakses teman lewat internet
 
-Game ini perlu **2 bagian** yang di-deploy: **Server** ke Render, **Client** ke
-Vercel. Repo sudah menyertakan `render.yaml` dan `vercel.json` sebagai konfigurasi.
+Game ini perlu **2 bagian** yang di-deploy: **Server** ke Railway, **Client** ke
+Vercel. Repo menyertakan `railway.json`, `render.yaml`, dan `vercel.json`.
+(Render juga bisa pakai `render.yaml`, tapi kini butuh verifikasi kartu.)
 
-### Langkah 1 — Deploy Server ke Render
+### Langkah 1 — Deploy Server ke Railway
 
-1. Buka https://render.com, **Sign in with GitHub**.
-2. **New +** -> **Blueprint** -> pilih repo `wni-simulator`. Render membaca
-   `render.yaml` dan menyiapkan service `wni-simulator-server` otomatis.
-   (Alternatif tanpa blueprint: **New +** -> **Web Service** ->
-   Build Command: `npm install && npm run build:shared && npm run build --workspace server`,
-   Start Command: `node server/dist/index.js`, Health Check Path: `/health`.)
-3. Klik **Apply / Create**. Tunggu build selesai (beberapa menit).
-4. Setelah hidup, salin URL-nya, mis. `https://wni-simulator-server.onrender.com`.
-   Buka `URL/health` di browser, harus muncul `{"ok":true}`.
+1. Buka https://railway.app, **Login with GitHub** (dapat kredit gratis, tanpa
+   kartu di awal).
+2. **New Project** -> **Deploy from GitHub repo** -> pilih `wni-simulator`.
+   Railway membaca `railway.json` (build shared + server, start server).
+3. Buka tab **Settings** service -> **Networking** -> **Generate Domain** agar
+   dapat URL publik, mis. `https://wni-simulator-production.up.railway.app`.
+4. Tunggu build selesai, lalu buka `URL/health` di browser, harus muncul
+   `{"ok":true}`. Simpan URL ini untuk Langkah 2.
 
 ### Langkah 2 — Deploy Client ke Vercel
 
@@ -91,13 +91,13 @@ Vercel. Repo sudah menyertakan `render.yaml` dan `vercel.json` sebagai konfigura
 
 ### Langkah 3 — Hubungkan keduanya (CORS)
 
-1. Kembali ke Render -> service server -> **Environment** -> set
+1. Kembali ke Railway -> service server -> tab **Variables** -> tambah
    `CLIENT_ORIGIN` = URL Vercel dari Langkah 2 (mis.
-   `https://wni-simulator.vercel.app`). Simpan (server akan re-deploy).
+   `https://wni-simulator.vercel.app`). Railway akan re-deploy otomatis.
 2. Selesai! Buka URL Vercel, buat room, bagikan kode + link ke temanmu. 🎉
 
-> Catatan: Render free tier "tidur" setelah idle; koneksi pertama bisa lambat
-> ~30 detik saat server bangun. Wajar untuk tier gratis.
+> Catatan: tier gratis bisa "tidur" saat idle; koneksi pertama kadang lambat
+> beberapa detik saat server bangun. Wajar untuk tier gratis.
 
 ## Catatan aturan
 
