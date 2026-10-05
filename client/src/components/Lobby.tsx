@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { AVATAR_OPTIONS, type GameState } from '@wni/shared';
 import type { GameSocket } from '../socket';
 import { Avatar } from './Avatar';
+import { HeroArt } from './HeroArt';
 import { fileToAvatarDataUrl } from '../imageUtil';
 
 interface Props {
@@ -112,46 +113,44 @@ export function Lobby({ socket, state, playerId, onError }: Props) {
     return (
       <div className="landing">
         <div className="landing-hero">
-          <div className="landing-badge">🇮🇩 Monopoli Nusantara</div>
-          <h1 className="landing-title">
-            WNI <span className="accent">Simulator</span>
-          </h1>
-          <p className="landing-tagline">
-            Caplok tanah dari Papua sampai Jawa, tarik kartu <b>Musibah</b> &{' '}
-            <b>Takdir</b> yang bikin ngakak, dan hati-hati{' '}
-            <b>ketahuan korupsi</b>: kena OTT KPK, harta disita negara! 😏
-          </p>
+          <div className="landing-copy">
+            <div className="landing-badge">
+              Berita baik, kamu dapat kesempatan jadi WNI
+            </div>
+            <h1 className="landing-title">
+              WNI Simulator
+              <span className="accent">Nusantara Kacau!</span>
+            </h1>
+            <p className="landing-tagline">
+              Caplok tanah dari Papua sampai Jawa, tarik kartu <b>Musibah</b>{' '}
+              &amp; <b>Takdir</b> yang bikin ngakak, dan hati-hati{' '}
+              <b>ketahuan korupsi</b>: kena OTT KPK, harta disita negara! 😏
+            </p>
 
-          <div className="landing-features">
-            <div className="feat">
-              <div className="feat-icon">🎲</div>
-              <div className="feat-title">Main Real-time</div>
-              <div className="feat-desc">
-                Buat room, bagikan kode, main bareng teman.
+            <div className="landing-info">
+              <div className="landing-info-cell">
+                <div className="landing-info-label">Pemain</div>
+                <div className="landing-info-value">2 - 6 orang</div>
+              </div>
+              <div className="landing-info-cell">
+                <div className="landing-info-label">Biaya</div>
+                <div className="landing-info-value">Gratis</div>
               </div>
             </div>
-            <div className="feat">
-              <div className="feat-icon">🃏</div>
-              <div className="feat-title">Kartu Satir</div>
-              <div className="feat-desc">
-                Pungli, THR, crypto bodong, jalur orang dalam.
-              </div>
-            </div>
-            <div className="feat">
-              <div className="feat-icon">🔒</div>
-              <div className="feat-title">Aturan Korupsi</div>
-              <div className="feat-desc">
-                Dipenjara? 50% harta disita, sewa masuk negara.
-              </div>
-            </div>
+
+            <button
+              className="btn primary landing-cta"
+              onClick={() => setScreen('form')}
+            >
+              <span>🎮 Main Sekarang</span>
+              <span className="cta-arrow">→</span>
+            </button>
+            <p className="landing-foot">
+              Tanpa install. Buat room, bagikan kode, main bareng teman.
+            </p>
           </div>
 
-          <button className="btn primary landing-cta" onClick={() => setScreen('form')}>
-            🎮 Main Sekarang
-          </button>
-          <p className="landing-foot">
-            Tanpa install. Cukup browser & kode room.
-          </p>
+          <HeroArt />
         </div>
       </div>
     );
@@ -168,7 +167,7 @@ export function Lobby({ socket, state, playerId, onError }: Props) {
 
         {/* Preview avatar terpilih */}
         <div className="avatar-preview">
-          <Avatar avatar={chosenAvatar} color="#ffce54" size={72} />
+          <Avatar avatar={chosenAvatar} color="#121212" size={72} />
           <div className="avatar-preview-label">
             {photo
               ? 'Foto kamu'
