@@ -184,6 +184,7 @@ io.on('connection', (socket) => {
   });
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`🇮🇩 WNI Simulator server berjalan di port ${PORT}`);
+// Bind ke 0.0.0.0 agar bisa dijangkau dari luar container (Railway/Render).
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`🇮🇩 WNI Simulator server berjalan di 0.0.0.0:${PORT}`);
 });
